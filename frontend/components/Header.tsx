@@ -23,7 +23,7 @@ import {
 
 const navigationItems = [
   { name: "Dashboard", href: "#", active: true },
-  { name: "Games", href: "#", active: false },
+  { name: "Games", href: "/games", active: false },
   { name: "Marketplace", href: "#", active: false },
   { name: "Leaderboard", href: "#", active: false },
   { name: "Rewards", href: "#", active: false },
@@ -47,7 +47,7 @@ export default function Header() {
                 S
               </div>
               <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-green-400">
-                SolanaVerse
+                SolCade
               </span>
             </div>
           </div>
