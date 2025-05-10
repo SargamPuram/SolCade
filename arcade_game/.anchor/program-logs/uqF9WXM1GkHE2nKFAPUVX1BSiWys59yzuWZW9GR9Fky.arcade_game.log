@@ -1,0 +1,21 @@
+Streaming transaction logs mentioning uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky. Confirmed commitment
+Transaction executed in slot 4:
+  Signature: 2BuBsyLo8SFjXYMVPpoCSPEwYckYVfu5yJ5R2bhkc8YcvXAExK4yJYs5x31EPnmbhSmR1D4XvGygVMWo1ZhRkbJo
+  Status: Ok
+  Log Messages:
+    Program uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky invoke [1]
+    Program log: Instruction: InitializePot
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky consumed 8045 of 200000 compute units
+    Program uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky success
+Transaction executed in slot 5:
+  Signature: 4Z2Lp1SuGd4S2d72steG61ybmH7itR6zN3SSwQeQJXPHhKfm5g4BAoQGJ7PGj7L96U3MpRJu2mYqjfRzwh7oG7KW
+  Status: Ok
+  Log Messages:
+    Program uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky invoke [1]
+    Program log: Instruction: PayEntryFee
+    Program 11111111111111111111111111111111 invoke [2]
+    Program 11111111111111111111111111111111 success
+    Program uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky consumed 4267 of 200000 compute units
+    Program uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky success
