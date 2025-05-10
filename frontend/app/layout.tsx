@@ -1,28 +1,32 @@
-import type React from "react"
-import "@/app/globals.css"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
+import type React from "react";
+import "@/app/globals.css";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Solana Ecosystem Dashboard",
-  description: "Your Gateway to the Solana Metaverse",
-    generator: 'v0.dev'
-}
+  description: "Your Gateway to the Solana Gaming",
+  generator: "v0.dev",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <body className={`${inter.className} antialiased max-w-screen `}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+        >
           {children}
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
