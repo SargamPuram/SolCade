@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -24,6 +24,7 @@ import {
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 // @ts-ignore
 import { useWallet } from "@solana/wallet-adapter-react";
+import { ROOT_URL } from "@/lib/imports";
 
 const navigationItems = [
   { name: "Dashboard", href: "#", active: true },
@@ -36,6 +37,19 @@ const navigationItems = [
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { connected, publicKey, disconnect } = useWallet();
+
+  useEffect(() => {
+    if (connected) {
+      const fetchUser = async () => {
+        const response = await fetch(
+          `${ROOT_URL}/user/existOrCreate/${publicKey}`
+        );
+        const data = await response.json();
+        console.log("data", data);
+      };
+      fetchUser();
+    }
+  }, [connected, publicKey]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-[90vw] mx-auto mt-2">

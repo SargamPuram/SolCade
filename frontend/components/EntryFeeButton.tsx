@@ -6,20 +6,15 @@ import { toast } from "sonner"; // Assuming you have a toast library, if not you
 
 function EntryFeeButton() {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { payEntryFee } = usePayEntryFee({
-    gameId: "flappy_bird",
-    potNumber: 2,
-    amount: 10000000, // 0.01 SOL in lamports
-  });
-
+  const { payEntryFee } = usePayEntryFee();
   const handlePayment = async () => {
     if (isProcessing) return;
 
     setIsProcessing(true);
     try {
       const result = await payEntryFee({
-        gameId: "flappy_bird",
-        potNumber: 2,
+        gameId: "68210f89681811dd521231f4",
+        potNumber: 4,
         amount: 10000000, // 0.1 SOL in lamports
       });
 

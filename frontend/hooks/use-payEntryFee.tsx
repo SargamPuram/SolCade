@@ -18,11 +18,7 @@ type PayEntryFeeProps = {
   amount: number; // in lamports
 };
 
-export function usePayEntryFee({
-  gameId,
-  potNumber,
-  amount,
-}: PayEntryFeeProps) {
+export function usePayEntryFee() {
   const { publicKey, signTransaction, sendTransaction } = useWallet();
   const connection = new Connection(
     "https://api.devnet.solana.com",
