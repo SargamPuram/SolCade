@@ -3,34 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Trophy,
-  Wallet,
-  Zap,
-  Clock,
-  Users,
-  BarChart3,
-  ArrowRight,
-} from "lucide-react";
+import { Trophy, Wallet, Users, BarChart3, ArrowRight } from "lucide-react";
 import FlappyBirdGame from "@/components/gameComponents/FlappyBirdGame";
 
+import EntryFeeButton from "@/components/EntryFeeButton";
+
 export default function DashboardLayout() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [gameScore, setGameScore] = useState(0);
-
-  const handleStartGame = () => {
-    setIsPlaying(true);
-
-    const interval = setInterval(() => {
-      setGameScore((prev) => prev + Math.floor(Math.random() * 10));
-    }, 2000);
-
-    setTimeout(() => {
-      clearInterval(interval);
-      setIsPlaying(false);
-    }, 20000);
-  };
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="container mx-auto px-2 py-2">
@@ -106,16 +84,7 @@ export default function DashboardLayout() {
                   </div>
                 </div>
 
-                <div className="mt-3">
-                  <Button
-                    onClick={handleStartGame}
-                    className="w-full h-8 text-xs bg-green-500 hover:bg-green-400 shadow-[0_0_8px_rgba(0,255,136,0.3)] hover:shadow-[0_0_12px_rgba(0,255,136,0.5)] transition-all duration-300"
-                    disabled={isPlaying}
-                  >
-                    <Wallet className="mr-1 h-3 w-3" />
-                    {isPlaying ? "Game in Progress..." : "Pay & Play (0.1 SOL)"}
-                  </Button>
-                </div>
+                <EntryFeeButton />
               </CardContent>
             </Card>
 

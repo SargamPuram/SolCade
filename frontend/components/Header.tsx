@@ -20,7 +20,9 @@ import {
   Settings,
   User,
 } from "lucide-react";
+// @ts-ignore
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// @ts-ignore
 import { useWallet } from "@solana/wallet-adapter-react";
 
 const navigationItems = [
