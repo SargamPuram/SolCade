@@ -83,6 +83,7 @@ export default function DashboardLayout() {
                     <span className="text-xs text-gray-400">Entry Fee</span>
                     <span className="text-xs font-bold">0.1 SOL</span>
                   </div>
+
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">Game Duration</span>
                     <span className="text-xs font-bold">20 Seconds</span>
