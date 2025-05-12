@@ -12,32 +12,96 @@ import { ROOT_URL } from "@/lib/imports";
 import LiveIndicator from "@/components/reusables/LiveIndicator";
 import { useGameStore, useUserStore, useScoreStore } from "@/lib/store";
 import { toast } from "sonner";
-
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 //The flow
 /*
 For leaderboard
   1. Fetch the potId from the database
   2. Store the potId in the state
-  3. TODO: The entries for leaderboard are entering, but we are not supposed to fetch until he plays the game, with a vaild score.
 
 */
+interface GameStats {
+  entryFee: number;
+  gameDuration: string;
+  bestScore: number;
+  players: number;
+  rank: number;
+  gamesPlayed: number;
+}
 
 export default function FlappyBirdGameLayout() {
   const [mode, setMode] = useState<"Fun" | "Bet">("Bet");
   const { score, setScore } = useScoreStore();
+  const [gameStats, setGameStats] = useState<GameStats>({
+    entryFee: 0.01,
+    gameDuration: "-",
+    bestScore: 0,
+    players: 0,
+    rank: 0,
+    gamesPlayed: 0,
+  });
   const [isPayEnabled, setIsPayEnabled] = useState<boolean>(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const { gameData, setCurrentPotDetails } = useGameStore();
   const { userId } = useUserStore();
   const [txhashStore, setTxhashStore] = useState();
+  //Utility functions
+  const fetchLeaderboard = async () => {
+    setLoading(true);
+    const response = await fetch(
+      //@ts-ignore
+      `${ROOT_URL}/leaderboard/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}/user/${userId}`
+    );
+    const data = await response.json();
+    const leaderboard = data.leaderboard.map((item: any, index: number) => ({
+      rank: index + 1,
+      name: `${item.userId.publicKey.slice(
+        0,
+        4
+      )}...${item.userId.publicKey.slice(-4)}`,
+      score: item.score,
+      isYou: item.userId._id == userId,
+    }));
+    setLeaderboard(leaderboard);
+    setGameStats({
+      ...gameStats,
+      bestScore: leaderboard.find((item: any) => item.isYou)?.score,
+      players: data.uniquePlayers,
+      rank: leaderboard.find((item: any) => item.isYou)?.rank,
+      gamesPlayed: data.totalGamesPlayed,
+    });
+    setLoading(false);
+  };
+
+  const checkUserPlayedGame = async () => {
+    //for easy fetch, we will take gameId, potId, userId. Fetch all of them and find the most recent one.
+    //Check if the user has played the game, by populating the txhash.
+
+    const response = await fetch(
+      //@ts-ignore
+      `${ROOT_URL}/user/${userId}/isPlayed/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}`
+    );
+    const data = await response.json();
+    // console.log(data);
+    //If played == false, then allow the user to play the game. else the button to pay will be unlocked.
+    // 3 cases, if there is no record (new player, it should return null), if there is a record, but not played (should return false), if there is a record and played (should return true)
+    if (data.latestGameplay === null) {
+      setIsPayEnabled(true);
+    } else {
+      setIsPayEnabled(data.latestGameplay.txhash.isPlayed);
+    }
+    setTxhashStore(data.latestGameplay.txhash);
+  };
 
   //1. fetched pot details
   useEffect(() => {
     const fetchPotId = async () => {
       const response = await fetch(`${ROOT_URL}/pot/latest/flappy_bird`);
       const data = await response.json();
+      console.log(data.pot);
       setCurrentPotDetails("flappy_bird", data.pot);
-      console.log("potId: ", data.pot);
     };
     fetchPotId();
   }, []);
@@ -45,14 +109,6 @@ export default function FlappyBirdGameLayout() {
   //Leaderboard fetch
   useEffect(() => {
     if (userId) {
-      const fetchLeaderboard = async () => {
-        const response = await fetch(
-          `${ROOT_URL}/leaderboard/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}/user/${userId}`
-        );
-        const data = await response.json();
-        setLeaderboard(data);
-        console.log(data);
-      };
       fetchLeaderboard();
     }
   }, [gameData, userId]);
@@ -64,29 +120,11 @@ export default function FlappyBirdGameLayout() {
     }
   }, [mode, userId, gameData]);
 
-  const checkUserPlayedGame = async () => {
-    //for easy fetch, we will take gameId, potId, userId. Fetch all of them and find the most recent one.
-    //Check if the user has played the game, by populating the txhash.
-    const response = await fetch(
-      `${ROOT_URL}/user/${userId}/isPlayed/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}`
-    );
-    const data = await response.json();
-    console.log(data);
-    //If played == false, then allow the user to play the game. else the button to pay will be unlocked.
-    // 3 cases, if there is no record (new player, it should return null), if there is a record, but not played (should return false), if there is a record and played (should return true)
-    if (data.latestGameplay === null) {
-      setIsPayEnabled(true);
-    } else {
-      setIsPayEnabled(data.latestGameplay.txhash.isPlayed);
-    }
-    setTxhashStore(data.latestGameplay.txhash);
-  };
-
   //Game over event listener
   useEffect(() => {
     function handleGameOver(e: any) {
       const finalScore = e.detail;
-      console.log("Game ended with score:", finalScore);
+      // console.log("Game ended with score:", finalScore);
       // Use setState or Zustand here
       setScore(finalScore);
     }
@@ -99,7 +137,6 @@ export default function FlappyBirdGameLayout() {
   useEffect(() => {
     //This update happens only when the user has played the game.
     if (score > 0) {
-      console.log("Score is greater than 0");
       const updateScore = async () => {
         const response = await fetch(`${ROOT_URL}/score/update`, {
           method: "POST",
@@ -108,6 +145,7 @@ export default function FlappyBirdGameLayout() {
           },
           body: JSON.stringify({
             gameId: gameData.flappy_bird.gameId,
+            //@ts-ignore
             potId: gameData.flappy_bird.currentPotDetails._id,
             userId: userId,
             score: score,
@@ -115,14 +153,12 @@ export default function FlappyBirdGameLayout() {
           }),
         });
         const data = await response.json();
-        console.log(data);
         if (!data.success) {
           console.error("Failed to update score:", data);
         } else {
-          console.log("Score updated successfully:", data);
           setIsPayEnabled(true);
+          fetchLeaderboard();
           toast.success(`Your score: ${score}`);
-          console.log("Resetting the pay button");
         }
       };
       updateScore();
@@ -146,13 +182,20 @@ export default function FlappyBirdGameLayout() {
           <div className="mt-2 md:mt-0 flex items-center space-x-2">
             <div className="bg-gray-900/60 backdrop-blur-sm px-2 py-1 rounded-md flex items-center">
               <Trophy className="h-3 w-3 text-yellow-400 mr-1" />
-              <span className="text-white font-bold text-xs">12.5 SOL</span>
-              <span className="text-gray-400 ml-1 text-xs">Prize</span>
+              <span className="text-white font-bold text-xs">
+                {/* @ts-ignore */}
+                {gameData.flappy_bird.currentPotDetails.totalLamports /
+                  LAMPORTS_PER_SOL}{" "}
+                SOL
+              </span>
+              <span className="text-gray-400 ml-1 text-xs">Prize Pool</span>
             </div>
 
             <div className="bg-gray-900/60 backdrop-blur-sm px-2 py-1 rounded-md flex items-center">
               <Users className="h-3 w-3 text-cyan-400 mr-1" />
-              <span className="text-white font-bold text-xs">128</span>
+              <span className="text-white font-bold text-xs">
+                {gameStats.players}
+              </span>
               <span className="text-gray-400 ml-1 text-xs">Players</span>
             </div>
           </div>
@@ -170,8 +213,10 @@ export default function FlappyBirdGameLayout() {
 
             {/* Overlay Mask */}
             {isPayEnabled && (
-              <div className="absolute inset-0 z-10 bg-black bg-opacity-70 backdrop-blur-lg flex items-center justify-center text-cyan-400 text-sm pointer-events-auto">
-                <p>Pay to play the next game...</p>
+              <div className="absolute inset-0 z-10 bg-black bg-opacity-70 backdrop-blur-lg flex items-center justify-center  text-cyan-400 text-sm pointer-events-auto">
+                <p className="text-center border border-dashed border-cyan-500 rounded-lg p-4 bg-[#0e121b]">
+                  Pay to play the next game...
+                </p>
               </div>
             )}
           </div>
@@ -195,23 +240,29 @@ export default function FlappyBirdGameLayout() {
 
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">Game Duration</span>
-                    <span className="text-xs font-bold">-</span>
+                    <span className="text-xs font-bold">
+                      {gameStats.gameDuration}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">
                       Your Best Score
                     </span>
                     <span className="text-xs font-bold text-cyan-400">
-                      7,650
+                      {gameStats.bestScore}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">Your Rank</span>
-                    <span className="text-xs font-bold text-amber-700">#3</span>
+                    <span className="text-xs font-bold text-amber-700">
+                      #{gameStats.rank}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">Games Played</span>
-                    <span className="text-xs font-bold">12</span>
+                    <span className="text-xs font-bold">
+                      {gameStats.gamesPlayed}
+                    </span>
                   </div>
                 </div>
 
@@ -219,6 +270,7 @@ export default function FlappyBirdGameLayout() {
                   <EntryFeeButton
                     gameId={gameData.flappy_bird.gameId}
                     potPublicKey={
+                      //@ts-ignore
                       gameData.flappy_bird.currentPotDetails.potPublicKey
                     }
                     checkUserPlayedGame={checkUserPlayedGame}
@@ -242,89 +294,71 @@ export default function FlappyBirdGameLayout() {
                 {/* Leaderboard Card */}
                 <Card className="bg-gray-900/60 border-gray-800 ">
                   <CardHeader className="border-b border-gray-800 py-2 px-3">
-                    <CardTitle className="flex items-center text-xs">
+                    <CardTitle className="flex items-center text-sm">
                       <Trophy className="mr-1 h-3 w-3 text-yellow-400" />
                       Top Players
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="divide-y divide-gray-800">
-                      {[
-                        {
-                          rank: 1,
-                          name: "CryptoKing",
-                          score: 9840,
-                          isYou: false,
-                        },
-                        {
-                          rank: 2,
-                          name: "SolWarrior",
-                          score: 8720,
-                          isYou: false,
-                        },
-                        {
-                          rank: 3,
-                          name: "BlockNinja",
-                          score: 7650,
-                          isYou: true,
-                        },
-                        {
-                          rank: 4,
-                          name: "MetaRacer",
-                          score: 6540,
-                          isYou: false,
-                        },
-                        {
-                          rank: 5,
-                          name: "CoinHunter",
-                          score: 5980,
-                          isYou: false,
-                        },
-                      ].map((player) => (
-                        <div
-                          key={player.rank}
-                          className={`flex items-center p-2 ${
-                            player.isYou
-                              ? "bg-green-500/10"
-                              : "hover:bg-gray-800/30"
-                          } transition-colors`}
+                    {loading ? (
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <Card
+                          key={index}
+                          className="bg-gray-900/40 border-gray-800 animate-pulse"
                         >
-                          <div className="w-4 font-bold text-center text-xs">
-                            {player.rank === 1 && (
-                              <span className="text-yellow-400">#1</span>
-                            )}
-                            {player.rank === 2 && (
-                              <span className="text-gray-400">#2</span>
-                            )}
-                            {player.rank === 3 && (
-                              <span className="text-amber-700">#3</span>
-                            )}
-                            {player.rank > 3 && (
-                              <span className="text-gray-500">
-                                #{player.rank}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="ml-2 flex-1">
-                            <div className="flex items-center">
-                              <span className="font-bold text-xs">
-                                {player.name}
-                              </span>
-                              {player.isYou && (
-                                <span className="ml-1 text-xs bg-green-500/20 text-green-400 px-1 py-0 rounded-full">
-                                  You
+                          <CardContent className="p-2 space-y-2">
+                            <div className="h-4 bg-gray-700 rounded w-1/4" />
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <div className="divide-y divide-gray-800">
+                        {leaderboard.slice(0, 5).map((player) => (
+                          <div
+                            key={player.rank}
+                            className={`flex items-center p-2 ${
+                              player.isYou
+                                ? "bg-green-500/10"
+                                : "hover:bg-gray-800/30"
+                            } transition-colors`}
+                          >
+                            <div className="w-4 font-bold text-center text-xs">
+                              {player.rank === 1 && (
+                                <span className="text-yellow-400">#1</span>
+                              )}
+                              {player.rank === 2 && (
+                                <span className="text-gray-400">#2</span>
+                              )}
+                              {player.rank === 3 && (
+                                <span className="text-amber-700">#3</span>
+                              )}
+                              {player.rank > 3 && (
+                                <span className="text-gray-500">
+                                  #{player.rank}
                                 </span>
                               )}
                             </div>
-                          </div>
 
-                          <div className="font-bold font-mono text-cyan-400 text-xs">
-                            {player.score.toLocaleString()}
+                            <div className="ml-2 flex-1">
+                              <div className="flex items-center">
+                                <span className="font-bold text-xs">
+                                  {player.name}
+                                </span>
+                                {player.isYou && (
+                                  <span className="ml-1 text-xs bg-green-500/20 text-green-400 px-1 py-0 rounded-full">
+                                    You
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="font-bold font-mono text-cyan-400 text-xs">
+                              {player.score.toLocaleString()}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="p-2 border-t border-gray-800">
                       <Button

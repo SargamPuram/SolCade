@@ -1,0 +1,136 @@
+/* style.css */
+@import url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  list-style: none;
+  text-decoration: none;
+  color: #fff;
+}
+
+body {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  font-family: "VT323", monospace;
+  font-weight: 400;
+  font-style: normal;
+  background-color: #000;
+}
+
+h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-weight: 100;
+  text-align: center;
+}
+
+.app-container {
+  width: 100%;
+  max-width: min(90%, 90vh); /* Responsive sizing */
+  aspect-ratio: 1 / 1;
+  background-color: #808e62;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border-radius: 0.5rem;
+  border: 6px solid #b3c194;
+  outline: 5px solid #4f5440;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.board {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: #b3c194;
+  display: grid;
+  grid-template-columns: repeat(21, 1fr);
+  grid-template-rows: repeat(21, 1fr);
+}
+
+.scores {
+  width: 90%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scores p {
+  padding: 0.25rem 0 0.5rem;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+}
+
+.btns {
+  display: flex;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
+
+.btn {
+  width: clamp(5rem, 25%, 8rem);
+  height: clamp(2rem, 8vh, 3.5rem);
+  font-family: "VT323", monospace;
+  padding: 0.2rem;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  color: white;
+  background-color: rgba(6, 202, 16, 0.897);
+  outline: none;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.head {
+  background-color: rgba(9, 194, 92, 0.904);
+}
+
+.snake {
+  background-color: #5a5a5a;
+  z-index: 2;
+}
+
+.food {
+  background-color: rgba(190, 36, 16, 0.849);
+  border-radius: 50%;
+}
+
+img {
+  max-width: 50px;
+  margin-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media screen and (max-height: 600px) {
+  .app-container {
+    padding: 0.25rem;
+    border: 4px solid #b3c194;
+    outline: 3px solid #4f5440;
+  }
+
+  h1 {
+    margin-bottom: 0.25rem;
+  }
+
+  .btns {
+    margin: 0.25rem 0;
+  }
+}
+
+/* For very small screens */
+@media screen and (max-height: 450px) {
+  .app-container {
+    max-width: min(95%, 95vh);
+  }
+
+  .scores p {
+    padding: 0.1rem 0 0.25rem;
+  }
+}

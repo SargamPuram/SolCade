@@ -11,12 +11,12 @@ export default function ModeToggle({
     <div
       className={`flex items-center justify-center p-1 bg-gray-800 rounded-full w-[180px] shadow-inner border border-gray-700 ${className}`}
     >
+      {/* TODO: Unlock the game when in fun mode */}
       {["Fun", "Bet"].map((option) => (
         <button
           key={option}
           onClick={() => {
             setMode(option as "Fun" | "Bet");
-            console.log(option);
           }}
           className={`flex-1 py-1 text-sm font-medium rounded-full transition-all duration-200 ${
             mode === option
