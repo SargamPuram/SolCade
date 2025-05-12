@@ -201,7 +201,7 @@ export default function FlappyBirdGameLayout() {
           </div>
         </div>
         <ModeToggle mode={mode} setMode={setMode} className="mx-auto mb-4" />
-        <LiveIndicator />
+        {/* <LiveIndicator /> */}
 
         {/* New layout with empty left section */}
         <div className="flex flex-col md:flex-row gap-4">
@@ -212,7 +212,8 @@ export default function FlappyBirdGameLayout() {
             <FlappyBirdGame />
 
             {/* Overlay Mask */}
-            {isPayEnabled && (
+
+            {isPayEnabled && mode === "Bet" && (
               <div className="absolute inset-0 z-10 bg-black bg-opacity-70 backdrop-blur-lg flex items-center justify-center  text-cyan-400 text-sm pointer-events-auto">
                 <p className="text-center border border-dashed border-cyan-500 rounded-lg p-4 bg-[#0e121b]">
                   Pay to play the next game...
