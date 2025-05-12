@@ -12,8 +12,8 @@ import Game from "./models/Games.js";
 import GamePot from "./models/GamePot.js";
 import Gameplay from "./models/Gameplay.js";
 import Txhash from "./models/Txhash.js";
-require('dotenv').config(); // make sure this is at the top
-const PORT = process.env.PORT || 3001;
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Initialize Express app
 const app = express();
