@@ -1,3 +1,4 @@
+import 'dotenv/config';  // Make sure this is at the very top
 import express from "express";
 import * as anchor from "@coral-xyz/anchor";
 const { BN } = anchor.default;
@@ -12,8 +13,9 @@ import Game from "./models/Games.js";
 import GamePot from "./models/GamePot.js";
 import Gameplay from "./models/Gameplay.js";
 import Txhash from "./models/Txhash.js";
-import dotenv from 'dotenv';
-dotenv.config();
+
+const PORT = process.env.PORT || 3001;
+
 
 // Initialize Express app
 const app = express();
