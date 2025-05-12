@@ -7,10 +7,9 @@ import Header from "@/components/Header";
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-black to-gray-950 text-white max-h-screen">
+    <div className="min-h-screen  text-white max-h-screen">
       <div className="container mx-auto px-4">
-        <Header />
-        <div className="w-full max-w-[120rem] mx-auto mt-20">
+        <div className="w-full h-[80vh]  max-w-[120rem] mx-auto mt-20">
           <HeroSection />
         </div>
         {/* <WalletSection />

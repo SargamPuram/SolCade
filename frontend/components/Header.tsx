@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,10 +20,15 @@ import {
   Settings,
   User,
 } from "lucide-react";
+// @ts-ignore
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+// @ts-ignore
+import { useWallet } from "@solana/wallet-adapter-react";
+import { ROOT_URL } from "@/lib/imports";
 
 const navigationItems = [
   { name: "Dashboard", href: "#", active: true },
-  { name: "Games", href: "#", active: false },
+  { name: "Games", href: "/games", active: false },
   { name: "Marketplace", href: "#", active: false },
   { name: "Leaderboard", href: "#", active: false },
   { name: "Rewards", href: "#", active: false },
@@ -31,7 +36,20 @@ const navigationItems = [
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
+  const { connected, publicKey, disconnect } = useWallet();
+
+  useEffect(() => {
+    if (connected) {
+      const fetchUser = async () => {
+        const response = await fetch(
+          `${ROOT_URL}/user/existOrCreate/${publicKey}`
+        );
+        const data = await response.json();
+        console.log("data", data);
+      };
+      fetchUser();
+    }
+  }, [connected, publicKey]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 w-[90vw] mx-auto mt-2">
@@ -47,7 +65,7 @@ export default function Header() {
                 S
               </div>
               <span className="ml-2 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-green-400">
-                SolanaVerse
+                SolCade
               </span>
             </div>
           </div>
@@ -71,7 +89,7 @@ export default function Header() {
 
           {/* Right side - Connect wallet / Account */}
           <div className="flex items-center">
-            {isConnected ? (
+            {connected ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -84,11 +102,13 @@ export default function Header() {
                         alt="User"
                       />
                       <AvatarFallback className="bg-gray-800 text-cyan-400">
-                        SU
+                        {publicKey?.toString().slice(0, 2).toUpperCase() ||
+                          "SU"}
                       </AvatarFallback>
                     </Avatar>
                     <span className="hidden sm:inline-block font-mono">
-                      Hx7...3kF9
+                      {publicKey?.toString().slice(0, 4)}...
+                      {publicKey?.toString().slice(-4)}
                     </span>
                     <ChevronDown className="h-4 w-4 text-gray-400" />
                   </Button>
@@ -110,21 +130,21 @@ export default function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-gray-800" />
                   <DropdownMenuItem
+                    onClick={async () => {
+                      try {
+                        await disconnect();
+                      } catch (error) {
+                        console.error("Failed to disconnect wallet:", error);
+                      }
+                    }}
                     className="flex items-center gap-2 text-red-400 cursor-pointer"
-                    onClick={() => setIsConnected(false)}
                   >
                     <LogOut className="h-4 w-4" /> Disconnect
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button
-                className="bg-green-500 hover:bg-green-400 shadow-[0_0_10px_rgba(0,255,136,0.3)] hover:shadow-[0_0_15px_rgba(0,255,136,0.5)] transition-all duration-300"
-                onClick={() => setIsConnected(true)}
-              >
-                <Wallet className="mr-2 h-4 w-4" />
-                Connect Wallet
-              </Button>
+              <WalletMultiButton className="!bg-gray-800 hover:!bg-gray-700" />
             )}
 
             {/* Mobile menu button */}
