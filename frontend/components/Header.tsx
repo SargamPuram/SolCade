@@ -20,12 +20,13 @@ import {
   Settings,
   User,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 // @ts-ignore
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 // @ts-ignore
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ROOT_URL } from "@/lib/imports";
-
+import { useUserStore } from "@/lib/store";
 const navigationItems = [
   { name: "Dashboard", href: "#", active: true },
   { name: "Games", href: "/games", active: false },
@@ -35,17 +36,23 @@ const navigationItems = [
 ];
 
 export default function Header() {
+  const { setUserId } = useUserStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { connected, publicKey, disconnect } = useWallet();
+  const router = useRouter();
 
   useEffect(() => {
     if (connected) {
+      console.log("Connected");
       const fetchUser = async () => {
         const response = await fetch(
           `${ROOT_URL}/user/existOrCreate/${publicKey}`
         );
         const data = await response.json();
-        console.log("data", data);
+
+        if (data.exists) {
+          setUserId(data.userId);
+        }
       };
       fetchUser();
     }
@@ -59,7 +66,12 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="relative flex h-16 items-center justify-between">
           {/* Logo area */}
-          <div className="flex items-center">
+          <div
+            className="flex items-center cursor-pointer select-none"
+            onClick={() => {
+              router.push("/");
+            }}
+          >
             <div className="flex-shrink-0 flex items-center">
               <div className="h-10 w-10 rounded-md bg-gradient-to-r from-cyan-500 to-green-500 flex items-center justify-center text-white font-bold text-xl">
                 S

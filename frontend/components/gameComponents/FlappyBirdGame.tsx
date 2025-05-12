@@ -8,10 +8,6 @@ export default function FlappyBirdGame() {
     script.src = "/games/JS-Flappy-Bird/game.js";
     script.async = true;
     document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
   }, []);
 
   return (

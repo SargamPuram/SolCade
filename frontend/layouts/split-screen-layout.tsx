@@ -54,7 +54,7 @@ export default function SplitScreenLayout() {
                     <div className="text-5xl mb-4">🚀</div>
                     <h2 className="text-2xl font-bold mb-2">Ready to Race?</h2>
                     <p className="text-gray-400 mb-6">
-                      Pay 0.1 SOL to start the game and compete for the top
+                      Pay 0.01 SOL to start the game and compete for the top
                       spot!
                     </p>
                     <Button
@@ -62,7 +62,7 @@ export default function SplitScreenLayout() {
                       className="bg-green-500 hover:bg-green-400 text-white px-8 py-6 h-auto rounded-full text-lg shadow-[0_0_15px_rgba(0,255,136,0.5)] hover:shadow-[0_0_25px_rgba(0,255,136,0.7)] transition-all duration-300"
                     >
                       <Wallet className="mr-2 h-5 w-5" />
-                      Pay & Play (0.1 SOL)
+                      Pay & Play (0.01 SOL)
                     </Button>
                   </div>
                 )}
@@ -106,7 +106,7 @@ export default function SplitScreenLayout() {
                   </div>
                   <div>
                     <div className="text-sm text-gray-400">Entry Fee</div>
-                    <div className="font-bold">0.1 SOL</div>
+                    <div className="font-bold">0.01 SOL</div>
                   </div>
                 </CardContent>
               </Card>

@@ -1,67 +1,56 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, GamepadIcon } from "lucide-react"
-
-const games = [
-  {
-    id: 1,
-    name: "Star Atlas",
-    description: "Space exploration MMO with epic battles and NFT spaceships",
-    genre: "RPG",
-    logo: "/placeholder.svg?height=80&width=80",
-  },
-  {
-    id: 2,
-    name: "Aurory",
-    description: "Cute creatures in a vibrant world of adventure and discovery",
-    genre: "Adventure",
-    logo: "/placeholder.svg?height=80&width=80",
-  },
-  {
-    id: 3,
-    name: "DeFi Land",
-    description: "Gamified decentralized finance with farming and trading",
-    genre: "Simulation",
-    logo: "/placeholder.svg?height=80&width=80",
-  },
-  {
-    id: 4,
-    name: "Solana Casino",
-    description: "Provably fair games with instant payouts and low fees",
-    genre: "Casino",
-    logo: "/placeholder.svg?height=80&width=80",
-  },
-  {
-    id: 5,
-    name: "Genopets",
-    description: "Move-to-earn game with digital pets that evolve as you move",
-    genre: "RPG",
-    logo: "/placeholder.svg?height=80&width=80",
-  },
-  {
-    id: 6,
-    name: "Solana Kart",
-    description: "High-speed racing with NFT vehicles and customizable tracks",
-    genre: "Racing",
-    logo: "/placeholder.svg?height=80&width=80",
-  },
-]
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, GamepadIcon } from "lucide-react";
+import { ROOT_URL } from "@/lib/imports";
+import { useRouter } from "next/navigation";
+interface Game {
+  id: number;
+  name: string;
+  gameId: string;
+  description: string;
+  entryFee: number;
+  logo: string;
+  genre: string;
+}
 
 export default function GamesArena() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedGenre, setSelectedGenre] = useState("")
+  const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      setLoading(true);
+      const response = await fetch(`${ROOT_URL}/games/all`);
+      const data = await response.json();
+      setGames(data);
+      setLoading(false);
+      console.log(data);
+    };
+    fetchGames();
+  }, []);
 
   const filteredGames = games.filter((game) => {
     return (
       game.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (selectedGenre === "" || game.genre === selectedGenre)
-    )
-  })
+      (selectedGenre === "" ||
+        selectedGenre === "all" ||
+        game.genre === selectedGenre)
+    );
+  });
 
   return (
     <section className="mb-12">
@@ -97,40 +86,60 @@ export default function GamesArena() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredGames.map((game) => (
-          <Card
-            key={game.id}
-            className="bg-gray-900/40 backdrop-blur-md border-gray-800 hover:border-green-500/50 transition-all duration-300 group overflow-hidden"
-          >
-            <CardContent className="p-6 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 to-green-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-              <div className="flex items-start gap-4 relative">
-                <div className="h-20 w-20 rounded-lg bg-gray-800 overflow-hidden flex items-center justify-center p-2">
-                  <img
-                    src={game.logo || "/placeholder.svg"}
-                    alt={`${game.name} logo`}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-lg">{game.name}</h3>
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-300">{game.genre}</span>
+        {loading
+          ? Array.from({ length: 6 }).map((_, idx) => (
+              <Card
+                key={idx}
+                className="bg-gray-900/40 border-gray-800 animate-pulse h-52"
+              >
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-700 rounded w-1/2 mb-4" />
+                  <div className="h-3 bg-gray-700 rounded w-full mb-2" />
+                  <div className="h-3 bg-gray-700 rounded w-5/6 mb-4" />
+                  <div className="h-8 bg-gray-700 rounded w-full" />
+                </CardContent>
+              </Card>
+            ))
+          : filteredGames.map((game, index) => (
+              <Card
+                key={index}
+                className="bg-gray-900/40 backdrop-blur-md border-gray-800 hover:border-green-500/50 transition-all duration-300 group overflow-hidden"
+              >
+                <CardContent className="p-6 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/10 to-green-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="flex items-start gap-4 relative">
+                    <div className="h-20 w-20 rounded-lg bg-gray-800 overflow-hidden flex items-center justify-center p-2">
+                      <img
+                        src={game.logo || "/placeholder.svg"}
+                        alt={`${game.name} logo`}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-lg">{game.name}</h3>
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-300">
+                          {game.genre}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                        {game.description}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          router.push(`/games/${game.gameId}`);
+                        }}
+                        className="mt-4 w-full bg-cyan-500 hover:bg-cyan-400 shadow-[0_0_10px_rgba(0,255,255,0.3)] hover:shadow-[0_0_15px_rgba(0,255,255,0.5)] transition-all duration-300 border-0"
+                      >
+                        <GamepadIcon className="mr-2 h-4 w-4" />
+                        Play Now
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-400 mt-1 line-clamp-2">{game.description}</p>
-
-                  <Button className="mt-4 w-full bg-cyan-500 hover:bg-cyan-400 shadow-[0_0_10px_rgba(0,255,255,0.3)] hover:shadow-[0_0_15px_rgba(0,255,255,0.5)] transition-all duration-300 border-0">
-                    <GamepadIcon className="mr-2 h-4 w-4" />
-                    Play Now
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            ))}
       </div>
     </section>
-  )
+  );
 }

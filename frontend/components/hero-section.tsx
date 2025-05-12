@@ -37,7 +37,7 @@ export default function HeroSection() {
 
   const handleClick = () => {
     if (router) {
-      router.push("/dashboard");
+      router.push("/games");
     }
   };
 

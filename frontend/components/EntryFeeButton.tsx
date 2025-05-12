@@ -4,7 +4,15 @@ import { Wallet, Loader2 } from "lucide-react";
 import { usePayEntryFee } from "@/hooks/use-payEntryFee";
 import { toast } from "sonner"; // Assuming you have a toast library, if not you can remove this
 
-function EntryFeeButton() {
+function EntryFeeButton({
+  gameId,
+  potPublicKey,
+  checkUserPlayedGame,
+}: {
+  gameId: string;
+  potPublicKey: string;
+  checkUserPlayedGame: () => void;
+}) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { payEntryFee } = usePayEntryFee();
   const handlePayment = async () => {
@@ -12,15 +20,15 @@ function EntryFeeButton() {
 
     setIsProcessing(true);
     try {
-      const result = await payEntryFee({
-        gameId: "68210f89681811dd521231f4",
-        potNumber: 4,
-        amount: 10000000, // 0.1 SOL in lamports
+      await payEntryFee({
+        gameId,
+        potPublicKey,
+        amount: 10000000, // 0.01 SOL in lamports
       });
 
-      console.log("Payment successful:", result);
       // If you have toast notifications
       toast.success("Payment successful!");
+      checkUserPlayedGame();
       // Add any success handling here
     } catch (error) {
       console.error("Payment failed:", error);
@@ -51,7 +59,7 @@ function EntryFeeButton() {
         ) : (
           <>
             <Wallet className="mr-1 h-3 w-3" />
-            Pay & Play (0.1 SOL)
+            Pay & Play (0.01 SOL)
           </>
         )}
       </Button>
