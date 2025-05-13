@@ -7,9 +7,9 @@ import Header from "@/components/Header";
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen  text-white max-h-screen">
+    <div className=" text-white">
       <div className="container mx-auto px-4">
-        <div className="w-full h-[80vh]  max-w-[120rem] mx-auto mt-20">
+        <div className="w-full h-[80vh]  max-w-[120rem] mx-auto mt-24">
           <HeroSection />
         </div>
         {/* <WalletSection />

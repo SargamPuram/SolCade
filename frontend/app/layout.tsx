@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SolanaProvider } from "@/contexts/SolanaProvider";
 import Header from "@/components/Header";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased max-w-screen `}>
+      <body className={`${inter.className} antialiased max-w-screen  `}>
         <SolanaProvider>
           <ThemeProvider
             attribute="class"
@@ -30,6 +31,7 @@ export default function RootLayout({
             <Header />
 
             {children}
+            <Toaster />
           </ThemeProvider>
         </SolanaProvider>
       </body>

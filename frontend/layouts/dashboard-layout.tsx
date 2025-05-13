@@ -59,12 +59,12 @@ export default function DashboardLayout() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">Entry Fee</span>
-                    <span className="text-xs font-bold">0.1 SOL</span>
+                    <span className="text-xs font-bold">0.01 SOL</span>
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">Game Duration</span>
-                    <span className="text-xs font-bold">20 Seconds</span>
+                    <span className="text-xs font-bold">-</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-xs text-gray-400">

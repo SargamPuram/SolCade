@@ -20,32 +20,39 @@ import {
   Settings,
   User,
 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 // @ts-ignore
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 // @ts-ignore
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ROOT_URL } from "@/lib/imports";
+import { useUserStore } from "@/lib/store";
 
 const navigationItems = [
-  { name: "Dashboard", href: "#", active: true },
-  { name: "Games", href: "/games", active: false },
-  { name: "Marketplace", href: "#", active: false },
-  { name: "Leaderboard", href: "#", active: false },
-  { name: "Rewards", href: "#", active: false },
+  { name: "Games", href: "/games" },
+  { name: "Marketplace", href: "/marketplace" },
+  { name: "Leaderboard", href: "/leaderboard" },
+  { name: "Rewards", href: "/rewards" },
 ];
 
 export default function Header() {
+  const { setUserId } = useUserStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { connected, publicKey, disconnect } = useWallet();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (connected) {
       const fetchUser = async () => {
         const response = await fetch(
-          `${ROOT_URL}/user/existOrCreate/${publicKey}`
+          ${ROOT_URL}/user/existOrCreate/${publicKey}
         );
         const data = await response.json();
-        console.log("data", data);
+
+        if (data.exists) {
+          setUserId(data.userId);
+        }
       };
       fetchUser();
     }
@@ -59,7 +66,10 @@ export default function Header() {
       <div className="container mx-auto px-4">
         <div className="relative flex h-16 items-center justify-between">
           {/* Logo area */}
-          <div className="flex items-center">
+          <div
+            className="flex items-center cursor-pointer select-none"
+            onClick={() => router.push("/")}
+          >
             <div className="flex-shrink-0 flex items-center">
               <div className="h-10 w-10 rounded-md bg-gradient-to-r from-cyan-500 to-green-500 flex items-center justify-center text-white font-bold text-xl">
                 S
@@ -70,24 +80,27 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Navigation tabs - desktop */}
+          {/* Desktop navigation */}
           <nav className="hidden md:flex space-x-1">
-            {navigationItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  item.active
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-300 hover:bg-gray-800/50 hover:text-white"
-                }`}
-              >
-                {item.name}
-              </a>
-            ))}
+            {navigationItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-300 hover:bg-gray-800/50 hover:text-white"
+                  }`}
+                >
+                  {item.name}
+                </a>
+              );
+            })}
           </nav>
 
-          {/* Right side - Connect wallet / Account */}
+          {/* Right side */}
           <div className="flex items-center">
             {connected ? (
               <DropdownMenu>
@@ -97,10 +110,7 @@ export default function Header() {
                     className="flex items-center gap-2 text-sm"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src="/placeholder.svg?height=32&width=32"
-                        alt="User"
-                      />
+                      <AvatarImage src="/placeholder.svg" alt="User" />
                       <AvatarFallback className="bg-gray-800 text-cyan-400">
                         {publicKey?.toString().slice(0, 2).toUpperCase() ||
                           "SU"}
@@ -147,7 +157,7 @@ export default function Header() {
               <WalletMultiButton className="!bg-gray-800 hover:!bg-gray-700" />
             )}
 
-            {/* Mobile menu button */}
+            {/* Mobile menu toggle */}
             <div className="flex md:hidden ml-4">
               <button
                 type="button"
@@ -171,19 +181,22 @@ export default function Header() {
         <div className="md:hidden relative">
           <div className="absolute inset-0 bg-gray-950/90 backdrop-blur-md"></div>
           <div className="relative space-y-1 px-4 pb-3 pt-2">
-            {navigationItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className={`block rounded-md px-3 py-2 text-base font-medium ${
-                  item.active
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
-                }`}
-              >
-                {item.name}
-              </a>
-            ))}
+            {navigationItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className={`block rounded-md px-3 py-2 text-base font-medium ${
+                    isActive
+                      ? "bg-gray-800 text-white"
+                      : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  }`}
+                >
+                  {item.name}
+                </a>
+              );
+            })}
           </div>
         </div>
       )}

@@ -1,4 +1,3 @@
-import 'dotenv/config';  // Make sure this is at the very top
 import express from "express";
 import * as anchor from "@coral-xyz/anchor";
 const { BN } = anchor.default;
@@ -14,12 +13,13 @@ import GamePot from "./models/GamePot.js";
 import Gameplay from "./models/Gameplay.js";
 import Txhash from "./models/Txhash.js";
 
-const PORT = process.env.PORT || 3001;
-
+import { schedule } from "node-cron";
 
 // Initialize Express app
 const app = express();
+const PORT = 3001;
 
+app.use(express.json());
 
 app.use(express.json());
 
@@ -66,7 +66,7 @@ const getPotPDA = (gameId, potNumber) => {
   const [potPda] = PublicKey.findProgramAddressSync(
     [
       Buffer.from("pot"),
-      Buffer.from(gameId),
+      Buffer.from(gameId), //ObjectID of game
       potNumberBN.toArrayLike(Buffer, "le", 8),
     ],
     programId
@@ -74,6 +74,44 @@ const getPotPDA = (gameId, potNumber) => {
 
   return potPda;
 };
+
+// function formatTimeRemaining(ms) {
+//   const seconds = Math.floor(ms / 1000);
+//   const minutes = Math.floor(seconds / 60);
+//   const remainingSeconds = seconds % 60;
+
+//   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+// }
+
+// // Add this endpoint to your Express app
+// app.get("/api/next-cron-time", (req, res) => {
+//   if (!nextCronTime) {
+//     res.status(404).json({ error: "Next cron time not set" });
+//     return;
+//   }
+
+//   const now = new Date();
+//   const timeRemaining = nextCronTime - now;
+
+//   if (timeRemaining <= 0) {
+//     res.json({
+//       timeRemaining: 0,
+//       nextCronTime: nextCronTime.toISOString(),
+//       message: "Cron job executing now or scheduled time has passed",
+//     });
+//   } else {
+//     res.json({
+//       timeRemaining: timeRemaining,
+//       nextCronTime: nextCronTime.toISOString(),
+//       seconds: Math.floor(timeRemaining / 1000),
+//       formatted: formatTimeRemaining(timeRemaining),
+//     });
+//   }
+// });
+
+// let nextCronTime = null;
+
+// Function to format time remaining in a human-readable format
 
 app.get("/user/existOrCreate/:publicKey", async (req, res) => {
   const { publicKey } = req.params;
@@ -84,20 +122,140 @@ app.get("/user/existOrCreate/:publicKey", async (req, res) => {
     const json = {
       exists: false,
       status: "success",
-      user: newUser,
+      userId: newUser._id,
       message: "New user created successfully",
     };
 
-    res.json(json);
+    res.status(200).json(json);
   } else {
     const json = {
       exists: true,
       status: "success",
-      user: user,
       message: "User already exists",
+      userId: user._id,
     };
 
-    res.json(json);
+    res.status(200).json(json);
+  }
+});
+
+app.get("/user/:userId/isPlayed/:gameId/:potId", async (req, res) => {
+  const { userId, gameId, potId } = req.params;
+
+  try {
+    const mostRecent = await Gameplay.findOne({ userId, gameId, potId })
+      .sort({ timestamp: -1 }) // get the latest one
+      .populate("txhash");
+
+    res.json({ latestGameplay: mostRecent });
+  } catch (err) {
+    console.error("Error fetching gameplay:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+//this will be used to get the current potId for the game with useEffect
+app.get("/pot/latest/:gameId", async (req, res) => {
+  try {
+    const { gameId } = req.params;
+
+    const gameObjectId = await Game.findOne({ gameId });
+
+    const latestPot = await GamePot.findOne({ gameId: gameObjectId._id })
+      .sort({ createdAt: -1 }) // sort by timestamp descending (latest first)
+      .exec();
+
+    if (!latestPot) {
+      return res.status(404).json({
+        success: false,
+        message: "No pots found for the given gameId",
+      });
+    }
+    if (latestPot.status === "Ended") {
+      return res.status(404).json({
+        success: false,
+        message: "No active pots found for the given gameId",
+      });
+    }
+
+    res.json({
+      success: true,
+      pot: latestPot,
+    });
+  } catch (error) {
+    console.error("Error fetching latest pot:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//leaderboard logic
+// Public leaderboard without user-specific details
+app.get("/leaderboard/:gameId/:potId", async (req, res) => {
+  try {
+    const { gameId, potId } = req.params;
+
+    const leaderboard = await Gameplay.find({
+      gameId,
+      potId,
+      score: { $gt: 0 },
+    })
+      .sort({ score: -1, timestamp: 1 })
+      .populate({ path: "userId", select: "-__v" })
+      .select("-gameId -potId -txhash -__v");
+
+    const totalGamesPlayed = await Gameplay.countDocuments({ gameId, potId });
+    const uniquePlayers = await Gameplay.distinct("userId", { gameId, potId });
+
+    res.json({
+      leaderboard,
+      totalGamesPlayed,
+      uniquePlayers: uniquePlayers.length,
+    });
+  } catch (error) {
+    console.error("Error fetching public leaderboard:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+// Leaderboard with user-specific stats
+app.get("/leaderboard/:gameId/:potId/user/:userId", async (req, res) => {
+  try {
+    const { gameId, potId, userId } = req.params;
+    const leaderboard = await Gameplay.find({
+      gameId,
+      potId,
+      score: { $gt: 0 },
+    })
+      .sort({ score: -1, timestamp: 1 })
+      .populate({ path: "userId", select: "-__v" })
+      .select("-gameId -potId -txhash -__v");
+
+    const totalGamesPlayed = await Gameplay.countDocuments({
+      gameId,
+      potId,
+      score: { $gt: 0 },
+    });
+    const uniquePlayers = await Gameplay.distinct("userId", {
+      gameId,
+      potId,
+      score: { $gt: 0 },
+    });
+
+    const userPlayCount = await Gameplay.countDocuments({
+      gameId,
+      potId,
+      userId,
+      score: { $gt: 0 },
+    });
+
+    res.json({
+      leaderboard,
+      totalGamesPlayed,
+      uniquePlayers: uniquePlayers.length,
+      userPlayCount,
+    });
+  } catch (error) {
+    console.error("Error fetching personalized leaderboard:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -252,6 +410,7 @@ app.post("/pot/close", async (req, res) => {
 
     // Get the PDA
     const potPda = getPotPDA(gameId, potNumber);
+    console.log(potPda);
 
     try {
       // Call the close_pot instruction
@@ -269,6 +428,7 @@ app.post("/pot/close", async (req, res) => {
       gamePot.status = "Ended";
       gamePot.closedAt = new Date();
       await gamePot.save();
+      console.log(gamePot);
 
       res.json({
         success: true,
@@ -288,23 +448,24 @@ app.post("/pot/close", async (req, res) => {
 // Distribute winnings to winners
 app.post("/pot/distribute-winners", async (req, res) => {
   try {
-    const { gameId, potNumber, winners } = req.body;
+    const { gameId, potPublicKey, winners } = req.body;
+
+    console.log(potPublicKey);
 
     if (
       !gameId ||
-      !potNumber ||
+      !potPublicKey ||
       !winners ||
       !Array.isArray(winners) ||
       winners.length !== 5
     ) {
       return res.status(400).json({
         error:
-          "gameId, potNumber, and winners array with exactly 5 public keys are required",
+          "gameId, potPublicKey, and winners array with exactly 5 public keys are required",
       });
     }
 
-    // Get the PDA
-    const potPda = getPotPDA(gameId, potNumber);
+    //winnerPubkeys is an array [pk1, pk2, pk3...];
 
     // Convert winner addresses to PublicKey objects
     const winnerPubkeys = winners.map((winner) => new PublicKey(winner));
@@ -321,7 +482,7 @@ app.post("/pot/distribute-winners", async (req, res) => {
       const tx = await program.methods
         .distributeWinners(winnerPubkeys)
         .accounts({
-          potAccount: potPda,
+          potAccount: potPublicKey,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .remainingAccounts(remainingAccounts)
@@ -331,7 +492,7 @@ app.post("/pot/distribute-winners", async (req, res) => {
         success: true,
         message: `Winnings distributed for game '${gameId}' with pot number ${potNumber}`,
         transaction: tx,
-        potAddress: potPda.toString(),
+        potAddress: potPublicKey.toString(),
         winners: winners,
       });
     } catch (err) {
@@ -360,18 +521,16 @@ app.post("/pot/distribute-winners", async (req, res) => {
 // Create unsigned transaction for client to sign with wallet adapter
 app.post("/pot/create-entry-fee-transaction", async (req, res) => {
   try {
-    const { gameId, potNumber, amount, playerPublicKey } = req.body;
-    console.log("req.body: ", req.body);
+    //game id comes from params
+    //pot public key comes from params
+    //publicKey will come from frontend localstorage
+    const { gameId, potPublicKey, amount, playerPublicKey } = req.body;
 
-    if (!gameId || !potNumber || !amount || !playerPublicKey) {
+    if (!gameId || !potPublicKey || !amount || !playerPublicKey) {
       return res.status(400).json({
-        error: "gameId, potNumber, amount, and playerPublicKey are required",
+        error: "gameId, potPublicKey, amount, and playerPublicKey are required",
       });
     }
-
-    // Get the PDA
-    const potPda = getPotPDA(gameId, potNumber);
-    console.log("Pot PDA: ", potPda.toString());
 
     // Convert amount to lamports (BN format)
     const amountBN = new BN(parseInt(amount));
@@ -384,7 +543,7 @@ app.post("/pot/create-entry-fee-transaction", async (req, res) => {
       const transaction = await program.methods
         .payEntryFee(amountBN)
         .accounts({
-          potAccount: potPda,
+          potAccount: potPublicKey,
           player: player,
           systemProgram: anchor.web3.SystemProgram.programId,
         })
@@ -400,41 +559,12 @@ app.post("/pot/create-entry-fee-transaction", async (req, res) => {
         transaction.serialize({ requireAllSignatures: false })
       ).toString("base64");
 
-      const txnHash = await Txhash.create({
-        txhash: serializedTransaction,
-        isPlayed: false,
-      });
-
-      const game = await Game.findOne({ _id: gameId });
-      const fpot = await GamePot.findOne({ potPublicKey: potPda });
-      const user = await User.findOne({ publicKey: playerPublicKey });
-
-      //db call TODO(this game play will be done after score calculation)
-      const newGameplay = new Gameplay({
-        gameId: game._id, //gets objectID
-        potId: fpot._id, //
-        userId: user._id,
-        score: 0,
-        timestamp: new Date(),
-        txhash: txnHash._id,
-      });
-      await newGameplay.save();
-
-      //add amount to the pot
-      const pot = await GamePot.findOne({
-        gameId,
-        potNumber,
-      });
-      pot.totalLamports += amount;
-      await pot.save();
-
       res.json({
         success: true,
         message: `Transaction created for entry fee payment of ${amount} lamports`,
         serializedTransaction,
-        potAddress: potPda.toString(),
+        potAddress: potPublicKey,
       });
-      console.log("Txn: ", serializedTransaction);
     } catch (err) {
       if (err.message.includes("PotNotActive")) {
         res.status(400).json({
@@ -451,83 +581,87 @@ app.post("/pot/create-entry-fee-transaction", async (req, res) => {
 });
 
 // Verify and record a completed payment transaction
+//  This is only used for checking the transaction after create-entry-fee-transaction is called
 app.post("/pot/verify-payment", async (req, res) => {
   try {
-    const { gameId, potNumber, signature, playerPublicKey } = req.body;
+    const { gameId, potPublicKey, signature, playerPublicKey } = req.body;
 
-    if (!gameId || !potNumber || !signature || !playerPublicKey) {
+    if (!gameId || !potPublicKey || !signature || !playerPublicKey) {
       return res.status(400).json({
-        error: "gameId, potNumber, signature, and playerPublicKey are required",
+        error:
+          "gameId, potPublicKey, signature, and playerPublicKey are required",
       });
     }
 
-    try {
-      // Get the transaction details
-      const transactionDetails = await connection.getTransaction(signature, {
-        commitment: "confirmed",
-      });
+    const tx = await connection.getTransaction(signature, {
+      commitment: "confirmed",
+    });
 
-      if (!transactionDetails) {
-        return res.status(404).json({ error: "Transaction not found" });
-      }
-
-      // Verify the transaction was successful
-      if (!transactionDetails.meta || transactionDetails.meta.err) {
-        return res.status(400).json({ error: "Transaction failed" });
-      }
-
-      // Get the PDA
-      const potPda = getPotPDA(gameId, potNumber);
-
-      // Verify this transaction was for our program
-      const programIndex =
-        transactionDetails.transaction.message.accountKeys.findIndex((key) =>
-          key.equals(programId)
-        );
-
-      if (programIndex === -1) {
-        return res
-          .status(400)
-          .json({ error: "Transaction did not involve our program" });
-      }
-
-      // Verify player public key is in the transaction
-      const playerPubkey = new PublicKey(playerPublicKey);
-      const playerIndex =
-        transactionDetails.transaction.message.accountKeys.findIndex((key) =>
-          key.equals(playerPubkey)
-        );
-
-      if (playerIndex === -1) {
-        return res
-          .status(400)
-          .json({ error: "Player was not a participant in this transaction" });
-      }
-
-      // TODO: Store the payment details in your database
-      // const paymentRecord = await db.payments.create({
-      //   gameId,
-      //   potNumber,
-      //   potAddress: potPda.toString(),
-      //   playerWallet: playerPublicKey,
-      //   signature,
-      //   amount,
-      //   timestamp: new Date()
-      // });
-
-      // For now, just return success
-      res.json({
-        success: true,
-        message: `Payment verified for game '${gameId}' with pot number ${potNumber}`,
-        signature,
-        potAddress: potPda.toString(),
-        player: playerPublicKey,
-        // paymentId: paymentRecord.id, // If you're using a database
-        timestamp: new Date(),
-      });
-    } catch (err) {
-      throw err;
+    if (!tx) {
+      return res.status(404).json({ error: "Transaction not found" });
     }
+
+    if (!tx.meta || tx.meta.err) {
+      return res.status(400).json({ error: "Transaction failed" });
+    }
+
+    const programIndex = tx.transaction.message.accountKeys.findIndex((key) =>
+      key.equals(programId)
+    );
+
+    if (programIndex === -1) {
+      return res
+        .status(400)
+        .json({ error: "Transaction did not involve our program" });
+    }
+
+    const playerPubkey = new PublicKey(playerPublicKey);
+    const playerIndex = tx.transaction.message.accountKeys.findIndex((key) =>
+      key.equals(playerPubkey)
+    );
+
+    if (playerIndex === -1) {
+      return res
+        .status(400)
+        .json({ error: "Player not involved in transaction" });
+    }
+
+    // Parse amount (from inner instructions or logs if needed, else trust input)
+    // For now we assume it's trusted input or known fee
+    const amount = 5000000; // Replace with dynamic extraction if needed
+
+    // Save signed transaction base64
+    const txnHash = await Txhash.create({
+      txhash: signature,
+      isPlayed: false,
+    });
+
+    const game = await Game.findOne({ _id: gameId });
+    const fpot = await GamePot.findOne({ potPublicKey });
+    const user = await User.findOne({ publicKey: playerPublicKey });
+
+    const newGameplay = new Gameplay({
+      gameId: game._id,
+      potId: fpot._id,
+      userId: user._id,
+      score: 0,
+      timestamp: new Date(),
+      txhash: txnHash._id,
+    });
+    await newGameplay.save();
+
+    // Add amount to the pot
+    const pot = await GamePot.findOne({ potPublicKey });
+    pot.totalLamports += amount;
+    await pot.save();
+
+    res.json({
+      success: true,
+      message: `Payment verified and gameplay entry saved`,
+      signature,
+      potAddress: potPublicKey,
+      timestamp: new Date(),
+    });
   } catch (error) {
     console.error("Error verifying payment:", error);
     res.status(500).json({ error: error.message });
@@ -584,6 +718,81 @@ app.post("/pot/pay-entry-fee", async (req, res) => {
   }
 });
 
+app.post("/score/update", async (req, res) => {
+  try {
+    const { gameId, potId, userId, txhash, score } = req.body;
+
+    const gameplays = await Gameplay.find({
+      gameId,
+      potId,
+      userId,
+      txhash,
+    });
+
+    if (gameplays.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No gameplay found with the given parameters",
+      });
+    }
+
+    if (gameplays.length > 1) {
+      return res.status(409).json({
+        success: false,
+        message: "Multiple gameplays found — possible data inconsistency",
+      });
+    }
+
+    const gameplay = gameplays[0];
+    gameplay.score = score;
+    await gameplay.save();
+
+    // ✅ Also update isPlayed in Txhash
+    const txhashDoc = await Txhash.findById(txhash);
+    if (txhashDoc) {
+      txhashDoc.isPlayed = true;
+      await txhashDoc.save();
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "Associated txhash not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Score updated and isPlayed marked true",
+      updated: {
+        gameplay,
+        txhash: txhashDoc,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating score:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//get all gameplays with gameId and potID
+app.get("/gameplays/:gameId/:potId", async (req, res) => {
+  try {
+    const { gameId, potId } = req.params;
+    const gameplays = await Gameplay.find({ gameId, potId }).populate(
+      "userId txhash"
+    );
+    console.log("gameplays: ", gameplays);
+    res.json(gameplays);
+  } catch (error) {
+    console.error("Error fetching gameplays:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+//get all games
+app.get("/games/all", async (req, res) => {
+  const games = await Game.find();
+  res.status(200).json(games);
+});
+
 // // Get all pots across all games
 // app.get("/pots", async (req, res) => {
 //   try {
@@ -607,19 +816,123 @@ app.post("/pot/pay-entry-fee", async (req, res) => {
 //   }
 // });
 
+function getTop5PublicKeys(response) {
+  const { leaderboard } = response;
+
+  const top5 = leaderboard
+    .slice(0, 5)
+    .map((entry) => entry.userId?.publicKey || process.env.DEFAULT_PUBLIC_KEY);
+
+  while (top5.length < 5) {
+    top5.push(process.env.DEFAULT_PUBLIC_KEY);
+  }
+
+  return top5;
+}
+
 // Start server
 app.listen(PORT, () => {
   connectDB();
   console.log(`Server running on port ${PORT}`);
   console.log(`Wallet public key: ${wallet.publicKey.toString()}`);
   console.log(`Connected to Solana devnet: https://api.devnet.solana.com`);
+
+  const GAME_Object_ID = "68210f89681811dd521231f4";
+  const gameId = "flappy_bird";
+
+  schedule("*/1 * * * *", async () => {
+    console.log(`Cron triggered at ${new Date().toISOString()}`);
+    let potNumber;
+
+    try {
+      // Fetch latest pot
+      const response = await fetch(
+        `${process.env.SERVER_URL}/pot/latest/${gameId}`
+      );
+      const data = await response.json();
+      const latestPot = data.pot;
+      potNumber = latestPot.potNumber;
+      console.log(potNumber);
+
+      //get winners first
+      const potId = await GamePot.findOne({
+        gameId: GAME_Object_ID,
+        potNumber,
+      });
+
+      //leaderboard fetch
+
+      const response2 = await fetch(
+        `${process.env.SERVER_URL}/leaderboard/${GAME_Object_ID}/${potId._id}/`
+      );
+      const data2 = await response2.json();
+      const result = getTop5PublicKeys(data2);
+      console.log(result); // your leaderboard response
+
+      console.log("Pot: ", potId);
+
+      //perform payouts
+      const response3 = await fetch(
+        `${process.env.SERVER_URL}/pot/distribute-winners`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            gameId: GAME_Object_ID,
+            potPublicKey: potId.potPublicKey,
+            winners: result,
+          }),
+        }
+      );
+      const data3 = await response3.json();
+      console.log(data3);
+      // Close if not already closed
+      if (latestPot.status !== "Ended") {
+        const closeRes = await fetch(`${process.env.SERVER_URL}/pot/close`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ gameId: GAME_Object_ID, potNumber }),
+        });
+
+        const closeData = await closeRes.json();
+        console.log(`Closed pot ${potNumber}:`, closeData.message);
+      } else {
+        console.log(`Pot ${potNumber} already closed`);
+      }
+
+      // Initialize next pot
+      const nextPotNumber = potNumber + 1;
+      const initRes = await fetch(`${process.env.SERVER_URL}/pot/initialize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId: GAME_Object_ID,
+          potNumber: nextPotNumber,
+        }),
+      });
+
+      const initData = await initRes.json();
+      console.log(`Initialized pot ${nextPotNumber}:`, initData.message);
+    } catch (err) {
+      console.error("Cron job error:", err.message);
+    }
+  });
 });
 
 app.post("/games/add", async (req, res) => {
-  const { gameId, description, entryFee } = req.body;
+  const { gameId, description, entryFee, logo, genre, name } = req.body;
   const game = await Game.findOne({ gameId });
   if (!game) {
-    const newGame = new Game({ gameId, description, entryFee });
+    const newGame = new Game({
+      gameId,
+      description,
+      entryFee,
+      logo,
+      genre,
+      name,
+    });
     await newGame.save();
     res.json({
       success: true,
