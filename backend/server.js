@@ -14,7 +14,7 @@ import Gameplay from "./models/Gameplay.js";
 import Txhash from "./models/Txhash.js";
 import cron from "node-cron";
 
-import { schedule } from "node-cron";
+// import { schedule } from "node-cron";
 
 // Initialize Express app
 const app = express();
@@ -841,7 +841,7 @@ app.listen(PORT, () => {
   const GAME_Object_ID = "68210f89681811dd521231f4";
   const gameId = "flappy_bird";
 
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/15 * * * *", async () => {
     console.log(`Cron triggered at ${new Date().toISOString()}`);
     let potNumber;
 
