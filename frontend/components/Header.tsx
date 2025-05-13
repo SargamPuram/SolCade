@@ -46,7 +46,7 @@ export default function Header() {
     if (connected) {
       const fetchUser = async () => {
         const response = await fetch(
-          ${ROOT_URL}/user/existOrCreate/${publicKey}
+          `${ROOT_URL}/user/existOrCreate/${publicKey}`
         );
         const data = await response.json();
 

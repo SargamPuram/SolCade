@@ -84,7 +84,8 @@ export default function DashboardLayout() {
                   </div>
                 </div>
 
-                <EntryFeeButton />
+                {/* <EntryFeeButton /> */}
+
               </CardContent>
             </Card>
 
