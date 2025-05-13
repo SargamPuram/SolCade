@@ -1,3 +1,4 @@
+import 'dotenv/config.js'
 import express from "express";
 import * as anchor from "@coral-xyz/anchor";
 const { BN } = anchor.default;
@@ -18,7 +19,7 @@ import cron from "node-cron";
 
 // Initialize Express app
 const app = express();
-const PORT = 3001;
+const PORT = process.env.port || 3001;
 
 app.use(express.json());
 
