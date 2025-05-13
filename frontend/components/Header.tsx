@@ -30,7 +30,6 @@ import { useUserStore } from "@/lib/store";
 
 const navigationItems = [
   { name: "Games", href: "/games" },
-  { name: "Marketplace", href: "/marketplace" },
   { name: "Leaderboard", href: "/leaderboard" },
   { name: "Rewards", href: "/rewards" },
 ];
