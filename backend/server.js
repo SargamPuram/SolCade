@@ -14,6 +14,7 @@ import GamePot from "./models/GamePot.js";
 import Gameplay from "./models/Gameplay.js";
 import Txhash from "./models/Txhash.js";
 import cron from "node-cron";
+import { log } from 'console';
 
 // import { schedule } from "node-cron";
 
@@ -640,6 +641,7 @@ app.post("/pot/verify-payment", async (req, res) => {
 
     const game = await Game.findOne({ _id: gameId });
     const fpot = await GamePot.findOne({ potPublicKey });
+    console.log(fpot);
     const user = await User.findOne({ publicKey: playerPublicKey });
 
     const newGameplay = new Gameplay({
