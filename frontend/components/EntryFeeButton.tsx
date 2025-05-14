@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet, Loader2 } from "lucide-react";
 import { usePayEntryFee } from "@/hooks/use-payEntryFee";
-import { toast } from "sonner"; 
+import { toast } from "sonner"; // Assuming you have a toast library, if not you can remove this
 
 function EntryFeeButton({
   gameId,

@@ -14,7 +14,7 @@ const PROGRAM_ID = new PublicKey("uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky");
 
 type PayEntryFeeProps = {
   gameId: string;
-  potNumber: string | number;
+  potPublicKey: string;
   amount: number; // in lamports
 };
 
@@ -26,7 +26,7 @@ export function usePayEntryFee() {
   );
 
   const payEntryFee = useCallback(
-    async ({ gameId, potNumber, amount }: PayEntryFeeProps) => {
+    async ({ gameId, potPublicKey, amount }: PayEntryFeeProps) => {
       if (!publicKey || !signTransaction || !sendTransaction) {
         throw new Error("Wallet not connected");
       }
@@ -39,7 +39,7 @@ export function usePayEntryFee() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             gameId,
-            potNumber,
+            potPublicKey,
             amount,
             playerPublicKey: publicKey.toString(),
           }),
@@ -63,7 +63,6 @@ export function usePayEntryFee() {
       transaction.feePayer = publicKey;
 
       const signedTx = await signTransaction(transaction);
-      console.log("Signed transaction:", signedTx);
 
       // Step 3: Send to blockchain
       const signature = await connection.sendRawTransaction(
@@ -92,7 +91,7 @@ export function usePayEntryFee() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           gameId,
-          potNumber,
+          potPublicKey,
           signature,
           playerPublicKey: publicKey.toString(),
         }),
