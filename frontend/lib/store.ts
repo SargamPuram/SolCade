@@ -19,7 +19,7 @@ interface ScoreStore {
 export const useGameStore = create<GameStore>((set) => ({
   //TODO: change according to new data
   gameData: {
-    flappy_bird: { gameId: "68210f89681811dd521231f4", currentPotDetails: {} },
+    flappy_bird: { gameId: "6822a17cc32d4c0783a20047", currentPotDetails: {} },
     pacman: { gameId: "TODO: Add gameId", currentPotDetails: {} },
   },
 
