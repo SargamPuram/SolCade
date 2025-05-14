@@ -640,9 +640,11 @@ app.post("/pot/verify-payment", async (req, res) => {
     });
 
     const game = await Game.findOne({ _id: gameId });
+    console.log("game :", game)
     const fpot = await GamePot.findOne({ potPublicKey });
-    console.log(fpot);
+    console.log("fpot: ", fpot);
     const user = await User.findOne({ publicKey: playerPublicKey });
+    console.log("user:", user)
 
     const newGameplay = new Gameplay({
       gameId: game._id,
