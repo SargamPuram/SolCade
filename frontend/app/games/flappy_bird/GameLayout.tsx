@@ -136,7 +136,7 @@ export default function FlappyBirdGameLayout() {
   //Update the score in the database
   useEffect(() => {
     //This update happens only when the user has played the game.
-    if (score > 0 && mode==='Bet') {
+    if (score > 0 && mode === "Bet") {
       const updateScore = async () => {
         const response = await fetch(`${ROOT_URL}/score/update`, {
           method: "POST",
@@ -162,9 +162,11 @@ export default function FlappyBirdGameLayout() {
         }
       };
       updateScore();
+    } else if (score >= 0 && mode === "Fun") {
+      toast.success(`Your score: ${score}`);
     }
   }, [score]);
-
+  
   return (
     <div className=" text-white">
       <div className="container mx-auto px-2 py-2">
