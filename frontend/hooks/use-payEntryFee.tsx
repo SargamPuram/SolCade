@@ -84,17 +84,20 @@ export function usePayEntryFee() {
       }
 
       console.log("Transaction confirmed!");
+      const body = {
+        gameId,
+        potPublicKey,
+        signature,
+        playerPublicKey: publicKey.toString(),
+      };
+
+      console.log("Body:", body);
 
       // Step 5: Verify payment with backend
       const verifyResponse = await fetch(`${ROOT_URL}/pot/verify-payment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gameId,
-          potPublicKey,
-          signature,
-          playerPublicKey: publicKey.toString(),
-        }),
+        body: JSON.stringify(body),
       });
 
       const result = await verifyResponse.json();
