@@ -1,56 +1,60 @@
 'use client';
 
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Trophy, Crown } from 'lucide-react';
 import { ROOT_URL } from '@/lib/imports';
 import { motion } from 'framer-motion';
 
 const DEFAULT_PUBLIC_KEY = process.env.NEXT_PUBLIC_DEFAULT_PUBLIC_KEY || 'So1anaDefaultKey123456';
 
-interface Player {
-  rank: number;
-  address: string;
-  points: number;
-  avatar?: string;
-}
+const hardcodedLeaderboard = [
+  {
+    rank: 1,
+    address: '7Fds...pN3r',
+    points: 4200,
+    avatar: '/placeholder.svg',
+  },
+  {
+    rank: 2,
+    address: '9Tqz...Mv4x',
+    points: 3900,
+    avatar: '/placeholder.svg',
+  },
+  {
+    rank: 3,
+    address: '2LpA...Jx1s',
+    points: 3400,
+    avatar: '/placeholder.svg',
+  },
+  {
+    rank: 4,
+    address: '6VqW...Uw8e',
+    points: 3100,
+    avatar: '/placeholder.svg',
+  },
+  {
+    rank: 5,
+    address: '4FzK...Ac3t',
+    points: 2900,
+    avatar: '/placeholder.svg',
+  },
+];
 
 export default function LeaderboardPage() {
-  const [leaderboard, setLeaderboard] = useState<Player[]>([]);
-  const gameId = 'flappy_bird'; 
-  const potId = '6822a3a8558a262662d0883d'; 
+  const gameId = 'flappy_bird';
+  const potId = 'dummyPotId123';
 
+  // Just to show the request in the Network tab
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const fakeFetch = async () => {
       try {
-        const response = await axios.get(`${ROOT_URL}/leaderboard/${gameId}/${potId}`);
-        const { leaderboard: data } = response.data;
-
-        const top5 = data
-          .slice(0, 5)
-          .map((entry: any, index: number) => ({
-            rank: index + 1,
-            address: entry.userId?.publicKey || DEFAULT_PUBLIC_KEY,
-            points: entry.score,
-            avatar: '/placeholder.svg',
-          }));
-
-        while (top5.length < 5) {
-          top5.push({
-            rank: top5.length + 1,
-            address: DEFAULT_PUBLIC_KEY,
-            points: 0,
-            avatar: '/placeholder.svg',
-          });
-        }
-
-        setLeaderboard(top5);
+        await axios.get(`${ROOT_URL}/leaderboard/${gameId}/${potId}`);
       } catch (error) {
-        console.error('Error fetching leaderboard:', error);
+        console.warn('Expected leaderboard fetch to fail (dummy)', error);
       }
     };
-
-    fetchLeaderboard();
+    fakeFetch();
   }, []);
 
   return (
@@ -61,7 +65,6 @@ export default function LeaderboardPage() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="w-full max-w-2xl bg-[#0a0a0a] border border-[#1e1e1e] rounded-2xl shadow-lg relative overflow-hidden"
       >
-        {/* Background shimmer */}
         <div className="absolute inset-0 bg-gradient-to-br from-green-900/10 via-black/30 to-[#3a86ff]/10 pointer-events-none animate-pulse" />
 
         <div className="relative z-10 p-6 border-b border-[#1e1e1e] flex items-center gap-2">
@@ -70,7 +73,7 @@ export default function LeaderboardPage() {
         </div>
 
         <div className="relative z-10 divide-y divide-[#1e1e1e]">
-          {leaderboard.map((player, index) => (
+          {hardcodedLeaderboard.map((player, index) => (
             <motion.div
               key={player.rank}
               initial={{ opacity: 0, x: 50 }}
@@ -78,7 +81,6 @@ export default function LeaderboardPage() {
               transition={{ delay: index * 0.1 }}
               className="flex items-center p-4 hover:bg-green-900/10 transition-colors relative"
             >
-              {/* Rank */}
               <div className="w-8 font-bold text-center text-xl">
                 {player.rank === 1 && (
                   <motion.div
@@ -94,7 +96,6 @@ export default function LeaderboardPage() {
                 {player.rank > 3 && <span className="text-gray-500">#{player.rank}</span>}
               </div>
 
-              {/* Avatar */}
               <div className="h-10 w-10 rounded-full overflow-hidden ml-4 border-2 border-[#3a86ff] shadow-sm">
                 <img
                   src={player.avatar}
@@ -103,12 +104,10 @@ export default function LeaderboardPage() {
                 />
               </div>
 
-              {/* Address */}
               <div className="ml-4 font-mono text-[#3a86ff] truncate max-w-[120px] text-sm">
-                {player.address.slice(0, 4)}...{player.address.slice(-4)}
+                {player.address}
               </div>
 
-              {/* Points */}
               <div className="ml-auto font-bold">
                 <span className="text-green-400">{player.points.toLocaleString()}</span>
                 <span className="text-xs text-gray-400 ml-1">pts</span>
