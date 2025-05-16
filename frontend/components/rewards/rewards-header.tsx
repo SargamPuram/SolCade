@@ -13,10 +13,10 @@ export default function RewardsHeader() {
           <p className="text-gray-400 mt-2">Earn rewards by playing games, staking, and completing daily tasks</p>
         </div>
 
-        <Button className="mt-4 md:mt-0 bg-green-500 hover:bg-green-400 shadow-[0_0_10px_rgba(0,255,136,0.3)] hover:shadow-[0_0_15px_rgba(0,255,136,0.5)] transition-all duration-300">
+        {/* <Button className="mt-4 md:mt-0 bg-green-500 hover:bg-green-400 shadow-[0_0_10px_rgba(0,255,136,0.3)] hover:shadow-[0_0_15px_rgba(0,255,136,0.5)] transition-all duration-300">
           <Wallet className="mr-2 h-4 w-4" />
           Connect Wallet to Claim
-        </Button>
+        </Button> */}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
