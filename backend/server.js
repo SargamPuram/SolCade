@@ -1,4 +1,4 @@
-import 'dotenv/config.js'
+import "dotenv/config.js";
 import express from "express";
 import * as anchor from "@coral-xyz/anchor";
 const { BN } = anchor.default;
@@ -14,7 +14,6 @@ import GamePot from "./models/GamePot.js";
 import Gameplay from "./models/Gameplay.js";
 import Txhash from "./models/Txhash.js";
 import cron from "node-cron";
-import { log } from 'console';
 
 // import { schedule } from "node-cron";
 
@@ -640,11 +639,11 @@ app.post("/pot/verify-payment", async (req, res) => {
     });
 
     const game = await Game.findOne({ _id: gameId });
-    console.log("game :", game)
+    console.log("game :", game);
     const fpot = await GamePot.findOne({ potPublicKey });
     console.log("fpot: ", fpot);
     const user = await User.findOne({ publicKey: playerPublicKey });
-    console.log("user:", user)
+    console.log("user:", user);
 
     const newGameplay = new Gameplay({
       gameId: game._id,
