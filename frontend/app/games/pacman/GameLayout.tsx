@@ -13,6 +13,7 @@ import LiveIndicator from "@/components/reusables/LiveIndicator";
 import { useGameStore, useUserStore, useScoreStore } from "@/lib/store";
 import { toast } from "sonner";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import PacmanGame from "@/components/gameComponents/PacmanGame";
 //The flow
 /*
 For leaderboard
@@ -29,9 +30,9 @@ interface GameStats {
   gamesPlayed: number;
 }
 
-export default function FlappyBirdGameLayout() {
+export default function PacmanGameLayout() {
   const [mode, setMode] = useState<"Fun" | "Bet">("Bet");
-  const { flappy_bird_score, setFlappyBirdScore } = useScoreStore();
+  const { pacman_score, setPacmanScore } = useScoreStore();
   const [gameStats, setGameStats] = useState<GameStats>({
     entryFee: 0.01,
     gameDuration: "-",
@@ -52,7 +53,7 @@ export default function FlappyBirdGameLayout() {
     setLoading(true);
     const response = await fetch(
       //@ts-ignore
-      `${ROOT_URL}/leaderboard/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}/user/${userId}`
+      `${ROOT_URL}/leaderboard/${gameData.pacman.gameId}/${gameData.pacman.currentPotDetails._id}/user/${userId}`
     );
     const data = await response.json();
     const leaderboard = data.leaderboard.map((item: any, index: number) => ({
@@ -81,7 +82,7 @@ export default function FlappyBirdGameLayout() {
 
     const response = await fetch(
       //@ts-ignore
-      `${ROOT_URL}/user/${userId}/isPlayed/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}`
+      `${ROOT_URL}/user/${userId}/isPlayed/${gameData.pacman.gameId}/${gameData.pacman.currentPotDetails._id}`
     );
     const data = await response.json();
     // console.log(data);
@@ -90,18 +91,18 @@ export default function FlappyBirdGameLayout() {
     if (data.latestGameplay === null) {
       setIsPayEnabled(true);
     } else {
-      setIsPayEnabled(data.latestGameplay.txhash.isPlayed);
+      setIsPayEnabled(data.latestGameplay.txhash!.isPlayed);
     }
     setTxhashStore(data.latestGameplay.txhash);
   };
 
-  //1. fetched pot details
+  // 1. fetched pot details
   useEffect(() => {
     const fetchPotId = async () => {
-      const response = await fetch(`${ROOT_URL}/pot/latest/flappy_bird`);
+      const response = await fetch(`${ROOT_URL}/pot/latest/pacman`);
       const data = await response.json();
-      console.log(data.pot);
-      setGameData("flappy_bird", data.pot);
+      // console.log(data.pot);
+      setGameData("pacman", data.pot);
     };
     fetchPotId();
   }, []);
@@ -113,7 +114,7 @@ export default function FlappyBirdGameLayout() {
     }
   }, [gameData, userId]);
 
-  //When its on bet, check if the user has played the game.
+  // When its on bet, check if the user has played the game.
   useEffect(() => {
     if (mode === "Bet" && userId) {
       checkUserPlayedGame();
@@ -123,20 +124,20 @@ export default function FlappyBirdGameLayout() {
   //Game over event listener
   useEffect(() => {
     function handleGameOver(e: any) {
-      const finalScore = e.detail;
-      // console.log("Game ended with score:", finalScore);
+      const finalScore = e.detail.score;
       // Use setState or Zustand here
-      setFlappyBirdScore(finalScore);
+
+      setPacmanScore(finalScore);
     }
 
-    document.addEventListener("gameOver", handleGameOver);
-    return () => document.removeEventListener("gameOver", handleGameOver);
+    document.addEventListener("PacmanGameOver", handleGameOver);
+    return () => document.removeEventListener("PacmanGameOver", handleGameOver);
   }, []);
 
   //Update the score in the database
   useEffect(() => {
     //This update happens only when the user has played the game.
-    if (flappy_bird_score > 0 && mode === "Bet") {
+    if (pacman_score > 0 && mode === "Bet") {
       const updateScore = async () => {
         const response = await fetch(`${ROOT_URL}/score/update`, {
           method: "POST",
@@ -144,11 +145,11 @@ export default function FlappyBirdGameLayout() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            gameId: gameData.flappy_bird.gameId,
+            gameId: gameData.pacman.gameId,
             //@ts-ignore
-            potId: gameData.flappy_bird.currentPotDetails._id,
+            potId: gameData.pacman.currentPotDetails._id,
             userId: userId,
-            score: flappy_bird_score,
+            score: pacman_score,
             txhash: txhashStore,
           }),
         });
@@ -158,14 +159,14 @@ export default function FlappyBirdGameLayout() {
         } else {
           setIsPayEnabled(true);
           fetchLeaderboard();
-          toast.success(`Your score: ${flappy_bird_score}`);
+          toast.success(`Your score: ${pacman_score}`);
         }
       };
       updateScore();
-    } else if (flappy_bird_score >= 0 && mode === "Fun") {
-      toast.success(`Your score: ${flappy_bird_score}`);
+    } else if (pacman_score >= 0 && mode === "Fun") {
+      toast.success(`Your score: ${pacman_score}`);
     }
-  }, [flappy_bird_score]);
+  }, [pacman_score]);
 
   return (
     <div className=" text-white">
@@ -173,11 +174,11 @@ export default function FlappyBirdGameLayout() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
           <div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-green-400">
-              Flappy Bird
+              Pacman
             </h1>
             <p className="text-gray-400 text-xs">
-              Flappy Bird is a game where you control a bird that flies through
-              pipes.
+              Navigate a yellow character through a labyrinth, eating dots and
+              avoiding ghosts, chase high scores!
             </p>
           </div>
 
@@ -185,8 +186,9 @@ export default function FlappyBirdGameLayout() {
             <div className="bg-gray-900/60 backdrop-blur-sm px-2 py-1 rounded-md flex items-center">
               <Trophy className="h-3 w-3 text-yellow-400 mr-1" />
               <span className="text-white font-bold text-xs">
+                {/* TODO: change the prize pool after deployment */}
                 {/* @ts-ignore */}
-                {gameData.flappy_bird.currentPotDetails.totalLamports /
+                {gameData.pacman.currentPotDetails.totalLamports /
                   LAMPORTS_PER_SOL}{" "}
                 SOL
               </span>
@@ -211,7 +213,7 @@ export default function FlappyBirdGameLayout() {
 
           <div className="relative min-h-[50vh] w-full md:w-[70%]">
             {/* Game always rendered */}
-            <FlappyBirdGame />
+            <PacmanGame />
 
             {/* Overlay Mask */}
 
@@ -271,10 +273,10 @@ export default function FlappyBirdGameLayout() {
 
                 {isPayEnabled ? (
                   <EntryFeeButton
-                    gameId={gameData.flappy_bird.gameId}
+                    gameId={gameData.pacman.gameId}
                     potPublicKey={
                       //@ts-ignore
-                      gameData.flappy_bird.currentPotDetails.potPublicKey
+                      gameData.pacman.currentPotDetails.potPublicKey
                     }
                     checkUserPlayedGame={checkUserPlayedGame}
                   />

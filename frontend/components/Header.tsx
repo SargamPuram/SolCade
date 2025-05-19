@@ -27,6 +27,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { ROOT_URL } from "@/lib/imports";
 import { useUserStore } from "@/lib/store";
+import dynamic from "next/dynamic";
 
 const navigationItems = [
   { name: "Games", href: "/games" },
@@ -40,6 +41,14 @@ export default function Header() {
   const { connected, publicKey, disconnect } = useWallet();
   const router = useRouter();
   const pathname = usePathname();
+
+  const WalletMultiButtonDynamic = dynamic(
+    () =>
+      import("@solana/wallet-adapter-react-ui").then(
+        (mod) => mod.WalletMultiButton
+      ),
+    { ssr: false }
+  );
 
   useEffect(() => {
     if (connected) {
@@ -153,7 +162,7 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <WalletMultiButton className="!bg-gray-800 hover:!bg-gray-700" />
+              <WalletMultiButtonDynamic className="!bg-gray-800 hover:!bg-gray-700" />
             )}
 
             {/* Mobile menu toggle */}

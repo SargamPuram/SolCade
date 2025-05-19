@@ -26,6 +26,7 @@ export default function HeroSection() {
       canvas.style.setProperty("--gradient-color-4", "#0F595E");
 
       const gradient = new Gradient();
+      //@ts-ignore
       gradient.initGradient("#gradient-canvas");
 
       return () => {
@@ -49,9 +50,7 @@ export default function HeroSection() {
         key={key}
         id="gradient-canvas"
         data-transition-in
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-900/20 via-green-900/20 to-pink-900/20" />
-      </canvas>
+      ></canvas>
       {/* Content */}
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
         <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-green-400">

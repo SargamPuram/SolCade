@@ -38,7 +38,6 @@ export default function GamesArena() {
       const data = await response.json();
       setGames(data);
       setLoading(false);
-      console.log(data);
     };
     fetchGames();
   }, []);
