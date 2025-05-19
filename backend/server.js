@@ -342,6 +342,11 @@ app.get("/pot-balance/:gameId/:potNumber", async (req, res) => {
 app.post("/pot/initialize", async (req, res) => {
   try {
     const { gameId, potNumber } = req.body;
+    const gameObjectId = await Game.findOne({ gameId });
+
+    if (!gameObjectId) {
+      return res.status(404).json({ error: "Game not found" });
+    }
 
     if (!gameId || !potNumber) {
       return res
@@ -352,12 +357,12 @@ app.post("/pot/initialize", async (req, res) => {
     const potNumberBN = new BN(parseInt(potNumber));
 
     // Get the PDA
-    const potPda = getPotPDA(gameId, potNumber);
+    const potPda = getPotPDA(gameObjectId._id, potNumber);
 
     try {
       // Call the initialize_pot instruction
       const tx = await program.methods
-        .initializePot(gameId, potNumberBN)
+        .initializePot(gameObjectId._id, potNumberBN)
         .accounts({
           potAccount: potPda,
           signer: wallet.publicKey,
@@ -367,7 +372,7 @@ app.post("/pot/initialize", async (req, res) => {
 
       //db call
       const newGamePot = new GamePot({
-        gameId,
+        gameId: gameObjectId._id,
         potNumber,
         potPublicKey: potPda.toString(),
         totalLamports: 0,
@@ -383,6 +388,7 @@ app.post("/pot/initialize", async (req, res) => {
         message: `Pot initialized for game '${gameId}' with pot number ${potNumber}`,
         transaction: tx,
         potAddress: potPda.toString(),
+        potId: newGamePot._id,
       });
     } catch (err) {
       if (err.message.includes("already in use")) {
@@ -630,7 +636,7 @@ app.post("/pot/verify-payment", async (req, res) => {
 
     // Parse amount (from inner instructions or logs if needed, else trust input)
     // For now we assume it's trusted input or known fee
-    const amount = 5000000; // Replace with dynamic extraction if needed
+    const amount = 10000000; // Replace with dynamic extraction if needed
 
     // Save signed transaction base64
     const txnHash = await Txhash.create({

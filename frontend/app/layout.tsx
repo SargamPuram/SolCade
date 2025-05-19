@@ -9,9 +9,11 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Solana Ecosystem Dashboard",
+  title: "Arcade On Solana",
   description: "Your Gateway to the Solana Gaming",
-  generator: "v0.dev",
+  icons: {
+    icon: "/5817797.png",
+  },
 };
 
 export default function RootLayout({

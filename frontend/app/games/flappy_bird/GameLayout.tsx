@@ -31,7 +31,7 @@ interface GameStats {
 
 export default function FlappyBirdGameLayout() {
   const [mode, setMode] = useState<"Fun" | "Bet">("Bet");
-  const { score, setScore } = useScoreStore();
+  const { flappy_bird_score, setFlappyBirdScore } = useScoreStore();
   const [gameStats, setGameStats] = useState<GameStats>({
     entryFee: 0.01,
     gameDuration: "-",
@@ -44,7 +44,7 @@ export default function FlappyBirdGameLayout() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { gameData, setCurrentPotDetails } = useGameStore();
+  const { gameData, setGameData } = useGameStore();
   const { userId } = useUserStore();
   const [txhashStore, setTxhashStore] = useState();
   //Utility functions
@@ -101,7 +101,7 @@ export default function FlappyBirdGameLayout() {
       const response = await fetch(`${ROOT_URL}/pot/latest/flappy_bird`);
       const data = await response.json();
       console.log(data.pot);
-      setCurrentPotDetails("flappy_bird", data.pot);
+      setGameData("flappy_bird", data.pot);
     };
     fetchPotId();
   }, []);
@@ -126,7 +126,7 @@ export default function FlappyBirdGameLayout() {
       const finalScore = e.detail;
       // console.log("Game ended with score:", finalScore);
       // Use setState or Zustand here
-      setScore(finalScore);
+      setFlappyBirdScore(finalScore);
     }
 
     document.addEventListener("gameOver", handleGameOver);
@@ -136,7 +136,7 @@ export default function FlappyBirdGameLayout() {
   //Update the score in the database
   useEffect(() => {
     //This update happens only when the user has played the game.
-    if (score > 0 && mode === "Bet") {
+    if (flappy_bird_score > 0 && mode === "Bet") {
       const updateScore = async () => {
         const response = await fetch(`${ROOT_URL}/score/update`, {
           method: "POST",
@@ -148,7 +148,7 @@ export default function FlappyBirdGameLayout() {
             //@ts-ignore
             potId: gameData.flappy_bird.currentPotDetails._id,
             userId: userId,
-            score: score,
+            score: flappy_bird_score,
             txhash: txhashStore,
           }),
         });
@@ -158,15 +158,15 @@ export default function FlappyBirdGameLayout() {
         } else {
           setIsPayEnabled(true);
           fetchLeaderboard();
-          toast.success(`Your score: ${score}`);
+          toast.success(`Your score: ${flappy_bird_score}`);
         }
       };
       updateScore();
-    } else if (score >= 0 && mode === "Fun") {
-      toast.success(`Your score: ${score}`);
+    } else if (flappy_bird_score >= 0 && mode === "Fun") {
+      toast.success(`Your score: ${flappy_bird_score}`);
     }
-  }, [score]);
-  
+  }, [flappy_bird_score]);
+
   return (
     <div className=" text-white">
       <div className="container mx-auto px-2 py-2">

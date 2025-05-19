@@ -69,7 +69,7 @@ export function usePayEntryFee() {
         signedTx.serialize()
       );
 
-      console.log("Transaction sent:", signature);
+      // console.log("Transaction sent:", signature);
 
       // Step 4: Wait for confirmation
       const confirmation = await connection.confirmTransaction(
@@ -91,7 +91,7 @@ export function usePayEntryFee() {
         playerPublicKey: publicKey.toString(),
       };
 
-      console.log("Body:", body);
+      // console.log("Body:", body);
 
       // Step 5: Verify payment with backend
       const verifyResponse = await fetch(`${ROOT_URL}/pot/verify-payment`, {

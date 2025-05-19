@@ -32,7 +32,7 @@ interface GameStats {
 
 export default function PacmanGameLayout() {
   const [mode, setMode] = useState<"Fun" | "Bet">("Bet");
-  const { score, setScore } = useScoreStore();
+  const { pacman_score, setPacmanScore } = useScoreStore();
   const [gameStats, setGameStats] = useState<GameStats>({
     entryFee: 0.01,
     gameDuration: "-",
@@ -45,128 +45,128 @@ export default function PacmanGameLayout() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const { gameData, setCurrentPotDetails } = useGameStore();
+  const { gameData, setGameData } = useGameStore();
   const { userId } = useUserStore();
   const [txhashStore, setTxhashStore] = useState();
   //Utility functions
-  // const fetchLeaderboard = async () => {
-  //   setLoading(true);
-  //   const response = await fetch(
-  //     //@ts-ignore
-  //     `${ROOT_URL}/leaderboard/${gameData.pacman.gameId}/${gameData.pacman.currentPotDetails._id}/user/${userId}`
-  //   );
-  //   const data = await response.json();
-  //   const leaderboard = data.leaderboard.map((item: any, index: number) => ({
-  //     rank: index + 1,
-  //     name: `${item.userId.publicKey.slice(
-  //       0,
-  //       4
-  //     )}...${item.userId.publicKey.slice(-4)}`,
-  //     score: item.score,
-  //     isYou: item.userId._id == userId,
-  //   }));
-  //   setLeaderboard(leaderboard);
-  //   setGameStats({
-  //     ...gameStats,
-  //     bestScore: leaderboard.find((item: any) => item.isYou)?.score,
-  //     players: data.uniquePlayers,
-  //     rank: leaderboard.find((item: any) => item.isYou)?.rank,
-  //     gamesPlayed: data.totalGamesPlayed,
-  //   });
-  //   setLoading(false);
-  // };
+  const fetchLeaderboard = async () => {
+    setLoading(true);
+    const response = await fetch(
+      //@ts-ignore
+      `${ROOT_URL}/leaderboard/${gameData.pacman.gameId}/${gameData.pacman.currentPotDetails._id}/user/${userId}`
+    );
+    const data = await response.json();
+    const leaderboard = data.leaderboard.map((item: any, index: number) => ({
+      rank: index + 1,
+      name: `${item.userId.publicKey.slice(
+        0,
+        4
+      )}...${item.userId.publicKey.slice(-4)}`,
+      score: item.score,
+      isYou: item.userId._id == userId,
+    }));
+    setLeaderboard(leaderboard);
+    setGameStats({
+      ...gameStats,
+      bestScore: leaderboard.find((item: any) => item.isYou)?.score,
+      players: data.uniquePlayers,
+      rank: leaderboard.find((item: any) => item.isYou)?.rank,
+      gamesPlayed: data.totalGamesPlayed,
+    });
+    setLoading(false);
+  };
 
-  // const checkUserPlayedGame = async () => {
-  //   //for easy fetch, we will take gameId, potId, userId. Fetch all of them and find the most recent one.
-  //   //Check if the user has played the game, by populating the txhash.
+  const checkUserPlayedGame = async () => {
+    //for easy fetch, we will take gameId, potId, userId. Fetch all of them and find the most recent one.
+    //Check if the user has played the game, by populating the txhash.
 
-  //   const response = await fetch(
-  //     //@ts-ignore
-  //     `${ROOT_URL}/user/${userId}/isPlayed/${gameData.pacman.gameId}/${gameData.pacman.currentPotDetails._id}`
-  //   );
-  //   const data = await response.json();
-  //   // console.log(data);
-  //   //If played == false, then allow the user to play the game. else the button to pay will be unlocked.
-  //   // 3 cases, if there is no record (new player, it should return null), if there is a record, but not played (should return false), if there is a record and played (should return true)
-  //   if (data.latestGameplay === null) {
-  //     setIsPayEnabled(true);
-  //   } else {
-  //     setIsPayEnabled(data.latestGameplay.txhash.isPlayed);
-  //   }
-  //   setTxhashStore(data.latestGameplay.txhash);
-  // };
+    const response = await fetch(
+      //@ts-ignore
+      `${ROOT_URL}/user/${userId}/isPlayed/${gameData.pacman.gameId}/${gameData.pacman.currentPotDetails._id}`
+    );
+    const data = await response.json();
+    // console.log(data);
+    //If played == false, then allow the user to play the game. else the button to pay will be unlocked.
+    // 3 cases, if there is no record (new player, it should return null), if there is a record, but not played (should return false), if there is a record and played (should return true)
+    if (data.latestGameplay === null) {
+      setIsPayEnabled(true);
+    } else {
+      setIsPayEnabled(data.latestGameplay.txhash!.isPlayed);
+    }
+    setTxhashStore(data.latestGameplay.txhash);
+  };
 
-  //1. fetched pot details
-  // useEffect(() => {
-  //   const fetchPotId = async () => {
-  //     const response = await fetch(`${ROOT_URL}/pot/latest/pacman`);
-  //     const data = await response.json();
-  //     console.log(data.pot);
-  //     setCurrentPotDetails("pacman", data.pot);
-  //   };
-  //   fetchPotId();
-  // }, []);
+  // 1. fetched pot details
+  useEffect(() => {
+    const fetchPotId = async () => {
+      const response = await fetch(`${ROOT_URL}/pot/latest/pacman`);
+      const data = await response.json();
+      // console.log(data.pot);
+      setGameData("pacman", data.pot);
+    };
+    fetchPotId();
+  }, []);
 
   //Leaderboard fetch
-  // useEffect(() => {
-  //   if (userId) {
-  //     fetchLeaderboard();
-  //   }
-  // }, [gameData, userId]);
+  useEffect(() => {
+    if (userId) {
+      fetchLeaderboard();
+    }
+  }, [gameData, userId]);
 
-  //When its on bet, check if the user has played the game.
-  // useEffect(() => {
-  //   if (mode === "Bet" && userId) {
-  //     checkUserPlayedGame();
-  //   }
-  // }, [mode, userId, gameData]);
+  // When its on bet, check if the user has played the game.
+  useEffect(() => {
+    if (mode === "Bet" && userId) {
+      checkUserPlayedGame();
+    }
+  }, [mode, userId, gameData]);
 
   //Game over event listener
   useEffect(() => {
     function handleGameOver(e: any) {
-      const finalScore = e.detail;
-      // console.log("Game ended with score:", finalScore);
+      const finalScore = e.detail.score;
       // Use setState or Zustand here
-      setScore(finalScore);
+
+      setPacmanScore(finalScore);
     }
 
-    document.addEventListener("gameOver", handleGameOver);
-    return () => document.removeEventListener("gameOver", handleGameOver);
+    document.addEventListener("PacmanGameOver", handleGameOver);
+    return () => document.removeEventListener("PacmanGameOver", handleGameOver);
   }, []);
 
   //Update the score in the database
-  // useEffect(() => {
-  //   //This update happens only when the user has played the game.
-  //   if (score > 0 && mode === "Bet") {
-  //     const updateScore = async () => {
-  //       const response = await fetch(`${ROOT_URL}/score/update`, {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           gameId: gameData.pacman.gameId,
-  //           //@ts-ignore
-  //           potId: gameData.pacman.currentPotDetails._id,
-  //           userId: userId,
-  //           score: score,
-  //           txhash: txhashStore,
-  //         }),
-  //       });
-  //       const data = await response.json();
-  //       if (!data.success) {
-  //         console.error("Failed to update score:", data);
-  //       } else {
-  //         setIsPayEnabled(true);
-  //         fetchLeaderboard();
-  //         toast.success(`Your score: ${score}`);
-  //       }
-  //     };
-  //     updateScore();
-  //   } else if (score >= 0 && mode === "Fun") {
-  //     toast.success(`Your score: ${score}`);
-  //   }
-  // }, [score]);
+  useEffect(() => {
+    //This update happens only when the user has played the game.
+    if (pacman_score > 0 && mode === "Bet") {
+      const updateScore = async () => {
+        const response = await fetch(`${ROOT_URL}/score/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            gameId: gameData.pacman.gameId,
+            //@ts-ignore
+            potId: gameData.pacman.currentPotDetails._id,
+            userId: userId,
+            score: pacman_score,
+            txhash: txhashStore,
+          }),
+        });
+        const data = await response.json();
+        if (!data.success) {
+          console.error("Failed to update score:", data);
+        } else {
+          setIsPayEnabled(true);
+          fetchLeaderboard();
+          toast.success(`Your score: ${pacman_score}`);
+        }
+      };
+      updateScore();
+    } else if (pacman_score >= 0 && mode === "Fun") {
+      toast.success(`Your score: ${pacman_score}`);
+    }
+  }, [pacman_score]);
 
   return (
     <div className=" text-white">
@@ -186,10 +186,10 @@ export default function PacmanGameLayout() {
             <div className="bg-gray-900/60 backdrop-blur-sm px-2 py-1 rounded-md flex items-center">
               <Trophy className="h-3 w-3 text-yellow-400 mr-1" />
               <span className="text-white font-bold text-xs">
-                {/* @ts-ignore */}
                 {/* TODO: change the prize pool after deployment */}
-                {/* {gameData.pacman.currentPotDetails.totalLamports /
-                  LAMPORTS_PER_SOL}{" "} */}
+                {/* @ts-ignore */}
+                {gameData.pacman.currentPotDetails.totalLamports /
+                  LAMPORTS_PER_SOL}{" "}
                 SOL
               </span>
               <span className="text-gray-400 ml-1 text-xs">Prize Pool</span>
@@ -272,15 +272,14 @@ export default function PacmanGameLayout() {
                 </div>
 
                 {isPayEnabled ? (
-                  // <EntryFeeButton
-                  //   gameId={gameData.pacman.gameId}
-                  //   potPublicKey={
-                  //     //@ts-ignore
-                  //     gameData.pacman.currentPotDetails.potPublicKey
-                  //   }
-                  //   // checkUserPlayedGame={checkUserPlayedGame}
-                  // />
-                  <></>
+                  <EntryFeeButton
+                    gameId={gameData.pacman.gameId}
+                    potPublicKey={
+                      //@ts-ignore
+                      gameData.pacman.currentPotDetails.potPublicKey
+                    }
+                    checkUserPlayedGame={checkUserPlayedGame}
+                  />
                 ) : (
                   <div className="flex justify-center items-center bg-gray-900/60 border border-dashed border-cyan-500 rounded-lg p-2 mt-2">
                     <span className="text-xs text-gray-400">
