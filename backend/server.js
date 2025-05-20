@@ -852,84 +852,15 @@ app.listen(PORT, () => {
   console.log(`Wallet public key: ${wallet.publicKey.toString()}`);
   console.log(`Connected to Solana devnet: https://api.devnet.solana.com`);
 
-  const GAME_Object_ID = "68210f89681811dd521231f4";
-  const gameId = "flappy_bird";
+  const Flappy_bird_game_Object_Id = "6822a17cc32d4c0783a20047";
+  const Pacman_game_Object_Id = "682a469a89ba63c2685e4f6c";
+  const Fgame_Id = "flappy_bird";
+  const Pgame_Id = "pacman";
 
   cron.schedule("*/15 * * * *", async () => {
-    console.log(`Cron triggered at ${new Date().toISOString()}`);
-    let potNumber;
-
     try {
-      // Fetch latest pot
-      const response = await fetch(
-        `${process.env.SERVER_URL}/pot/latest/${gameId}`
-      );
-      const data = await response.json();
-      const latestPot = data.pot;
-      potNumber = latestPot.potNumber;
-      console.log(potNumber);
-
-      //get winners first
-      const potId = await GamePot.findOne({
-        gameId: GAME_Object_ID,
-        potNumber,
-      });
-
-      //leaderboard fetch
-
-      const response2 = await fetch(
-        `${process.env.SERVER_URL}/leaderboard/${GAME_Object_ID}/${potId._id}/`
-      );
-      const data2 = await response2.json();
-      const result = getTop5PublicKeys(data2);
-      console.log(result); // your leaderboard response
-
-      console.log("Pot: ", potId);
-
-      //perform payouts
-      const response3 = await fetch(
-        `${process.env.SERVER_URL}/pot/distribute-winners`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            gameId: GAME_Object_ID,
-            potPublicKey: potId.potPublicKey,
-            winners: result,
-          }),
-        }
-      );
-      const data3 = await response3.json();
-      console.log(data3);
-      // Close if not already closed
-      if (latestPot.status !== "Ended") {
-        const closeRes = await fetch(`${process.env.SERVER_URL}/pot/close`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ gameId: GAME_Object_ID, potNumber }),
-        });
-
-        const closeData = await closeRes.json();
-        console.log(`Closed pot ${potNumber}:`, closeData.message);
-      } else {
-        console.log(`Pot ${potNumber} already closed`);
-      }
-
-      // Initialize next pot
-      const nextPotNumber = potNumber + 1;
-      const initRes = await fetch(`${process.env.SERVER_URL}/pot/initialize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gameId: GAME_Object_ID,
-          potNumber: nextPotNumber,
-        }),
-      });
-
-      const initData = await initRes.json();
-      console.log(`Initialized pot ${nextPotNumber}:`, initData.message);
+      await handleGameCron(Flappy_bird_game_Object_Id, Fgame_Id);
+      await handleGameCron(Pacman_game_Object_Id, Pgame_Id);
     } catch (err) {
       console.error("Cron job error:", err.message);
     }
@@ -958,3 +889,80 @@ app.post("/games/add", async (req, res) => {
     res.json({ success: false, message: "Game already exists" });
   }
 });
+
+const handleGameCron = async (gameObjectId, gameId) => {
+  console.log(
+    `Running cron for game: ${gameId} at ${new Date().toISOString()}`
+  );
+  try {
+    // Fetch latest pot
+    const response = await fetch(
+      `${process.env.SERVER_URL}/pot/latest/${gameId}`
+    );
+    const data = await response.json();
+    const latestPot = data.pot;
+    const potNumber = latestPot.potNumber;
+    console.log(`Pot number: ${potNumber}`);
+
+    // Get pot document from DB
+    const potId = await GamePot.findOne({
+      gameId: gameObjectId,
+      potNumber,
+    });
+
+    // Leaderboard fetch
+    const response2 = await fetch(
+      `${process.env.SERVER_URL}/leaderboard/${gameObjectId}/${potId._id}/`
+    );
+    const data2 = await response2.json();
+    const result = getTop5PublicKeys(data2);
+    console.log("Top 5 winners:", result);
+
+    // Distribute payouts
+    const response3 = await fetch(
+      `${process.env.SERVER_URL}/pot/distribute-winners`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId: gameObjectId,
+          potPublicKey: potId.potPublicKey,
+          winners: result,
+        }),
+      }
+    );
+    const data3 = await response3.json();
+    console.log(data3);
+
+    // Close pot if not already closed
+    if (latestPot.status !== "Ended") {
+      const closeRes = await fetch(`${process.env.SERVER_URL}/pot/close`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId: gameObjectId,
+          potNumber,
+        }),
+      });
+      const closeData = await closeRes.json();
+      console.log(`Closed pot ${potNumber}:`, closeData.message);
+    } else {
+      console.log(`Pot ${potNumber} already closed`);
+    }
+
+    // Initialize next pot
+    const nextPotNumber = potNumber + 1;
+    const initRes = await fetch(`${process.env.SERVER_URL}/pot/initialize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gameId: gameObjectId,
+        potNumber: nextPotNumber,
+      }),
+    });
+    const initData = await initRes.json();
+    console.log(`Initialized pot ${nextPotNumber}:`, initData.message);
+  } catch (err) {
+    console.error(`Cron job error for ${gameId}:`, err.message);
+  }
+};
