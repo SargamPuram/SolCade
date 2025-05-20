@@ -857,7 +857,7 @@ app.listen(PORT, () => {
   const Fgame_Id = "flappy_bird";
   const Pgame_Id = "pacman";
 
-  cron.schedule("*/15 * * * *", async () => {
+  cron.schedule("*/1 * * * *", async () => {
     try {
       await handleGameCron(Flappy_bird_game_Object_Id, Fgame_Id);
       await handleGameCron(Pacman_game_Object_Id, Pgame_Id);
