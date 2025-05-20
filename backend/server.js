@@ -115,6 +115,10 @@ const getPotPDA = (gameId, potNumber) => {
 
 // Function to format time remaining in a human-readable format
 
+app.get("/ping", (req, res) => {
+  return res.json({ message: "pong" });
+});
+
 app.get("/user/existOrCreate/:publicKey", async (req, res) => {
   const { publicKey } = req.params;
   const user = await User.findOne({ publicKey });
