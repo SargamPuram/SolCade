@@ -146,6 +146,10 @@ app.get("/user/existOrCreate/:publicKey", async (req, res) => {
 });
 
 app.get("/user/:userId/isPlayed/:gameId/:potId", async (req, res) => {
+  //userId - userObjectId (_id);
+  //gameId - gameObjectId (_id);
+  //potId - potObjectId (_id);
+
   const { userId, gameId, potId } = req.params;
 
   try {
@@ -162,6 +166,7 @@ app.get("/user/:userId/isPlayed/:gameId/:potId", async (req, res) => {
 
 //this will be used to get the current potId for the game with useEffect
 app.get("/pot/latest/:gameId", async (req, res) => {
+  //only for this we give pacman/flappy_bird as gameId
   try {
     const { gameId } = req.params;
 
@@ -180,14 +185,14 @@ app.get("/pot/latest/:gameId", async (req, res) => {
     if (latestPot.status === "Ended") {
       return res.status(404).json({
         success: false,
-        message: "No active pots found for the given gameId",
+        message: "No ACTIVE pots found for the given gameId",
       });
     }
-
     res.json({
       success: true,
       pot: latestPot,
     });
+    0;
   } catch (error) {
     console.error("Error fetching latest pot:", error);
     res.status(500).json({ error: error.message });
@@ -197,6 +202,8 @@ app.get("/pot/latest/:gameId", async (req, res) => {
 //leaderboard logic
 // Public leaderboard without user-specific details
 app.get("/leaderboard/:gameId/:potId", async (req, res) => {
+  //gameId - gameObjectId (_id);
+  //potId - potObjectId (_id);
   try {
     const { gameId, potId } = req.params;
 
@@ -224,6 +231,9 @@ app.get("/leaderboard/:gameId/:potId", async (req, res) => {
 });
 // Leaderboard with user-specific stats
 app.get("/leaderboard/:gameId/:potId/user/:userId", async (req, res) => {
+  //gameId - gameObjectId (_id);
+  //potId - potObjectId (_id);
+  //userId - userObjectId (_id);
   try {
     const { gameId, potId, userId } = req.params;
     const leaderboard = await Gameplay.find({
@@ -266,21 +276,21 @@ app.get("/leaderboard/:gameId/:potId/user/:userId", async (req, res) => {
 });
 
 // Get Pot details (balance, status, balance_sol);
-app.get("/pot/:gameId/:potNumber", async (req, res) => {
+app.get("/pot/:gameId/:potPublicKey", async (req, res) => {
+  //gameId - gameObjectId (_id);
+  //potPublicKey - potPublicKey (string);
+  //Sample request: /pot/682a469a89ba63c2685e4f6c/1sjwcUDPTnSdRrLzniGmXoCJfEm2EWYsmc8r1gQYThT
   try {
-    const { gameId, potNumber } = req.params;
-
-    // Get the PDA
-    const potPda = getPotPDA(gameId, potNumber);
+    const { gameId, potPublicKey } = req.params;
 
     try {
       // Fetch the pot account data
-      const potAccount = await program.account.gamePot.fetch(potPda);
+      const potAccount = await program.account.gamePot.fetch(potPublicKey);
 
       // Return the pot balance and status
       res.json({
         gameId: potAccount.gameId,
-        potAddress: potPda.toString(),
+        potAddress: potPublicKey,
         potNumber: potAccount.potNumber.toString(),
         balance: potAccount.totalLamports.toString(),
         status: Object.keys(potAccount.status)[0],
@@ -290,7 +300,7 @@ app.get("/pot/:gameId/:potNumber", async (req, res) => {
     } catch (err) {
       if (err.message.includes("Account does not exist")) {
         res.status(404).json({
-          error: `Pot not found for game '${gameId}' with pot number ${potNumber}`,
+          error: `Pot not found for game '${gameId}' with pot Public Key ${potPublicKey}`,
           details: "The pot account may not have been initialized yet",
         });
       } else {
@@ -303,69 +313,28 @@ app.get("/pot/:gameId/:potNumber", async (req, res) => {
   }
 });
 
-// Get pot balance using the check_pot_status instruction
-app.get("/pot-balance/:gameId/:potNumber", async (req, res) => {
-  try {
-    const { gameId, potNumber } = req.params;
-
-    // Get the PDA
-    const potPda = getPotPDA(gameId, potNumber);
-
-    try {
-      // Call the check_pot_status instruction
-      const balance = await program.methods
-        .checkPotStatus()
-        .accounts({
-          potAccount: potPda,
-        })
-        .view();
-
-      res.json({
-        gameId,
-        potNumber,
-        balance: balance.toString(),
-        balanceSol: balance.toNumber() / anchor.web3.LAMPORTS_PER_SOL,
-      });
-    } catch (err) {
-      if (err.message.includes("Account does not exist")) {
-        res.status(404).json({
-          error: `Pot not found for game '${gameId}' with pot number ${potNumber}`,
-          details: "The pot account may not have been initialized yet",
-        });
-      } else {
-        throw err;
-      }
-    }
-  } catch (error) {
-    console.error("Error checking pot balance:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // Initialize a new pot (done by cron job for only once)
 app.post("/pot/initialize", async (req, res) => {
   try {
     const { gameId, potNumber } = req.body;
-    const gameObjectId = await Game.findOne({ gameId });
-
-    if (!gameObjectId) {
-      return res.status(404).json({ error: "Game not found" });
-    }
-
     if (!gameId || !potNumber) {
       return res
         .status(400)
         .json({ error: "gameId and potNumber are required" });
     }
 
-    const potNumberBN = new BN(parseInt(potNumber));
+    const gameObjectId = await Game.findOne({ gameId });
+    if (!gameObjectId) {
+      return res.status(404).json({ error: "Game not found" });
+    }
 
-    // Get the PDA
+    const potNumberBN = new BN(parseInt(potNumber));
     const potPda = getPotPDA(gameObjectId._id, potNumber);
 
+    let tx; // Declare outside to use later
     try {
-      // Call the initialize_pot instruction
-      const tx = await program.methods
+      // --- 1. Try to initialize the pot on-chain ---
+      tx = await program.methods
         .initializePot(gameObjectId._id, potNumberBN)
         .accounts({
           potAccount: potPda,
@@ -373,87 +342,159 @@ app.post("/pot/initialize", async (req, res) => {
           systemProgram: anchor.web3.SystemProgram.programId,
         })
         .rpc();
+    } catch (err) {
+      console.log(err);
+      if (err.message.includes("already in use")) {
+        return res.status(409).json({
+          error: `Pot already exists for game '${gameId}' with pot number ${potNumber}`,
+        });
+      } else {
+        console.error("Failed to initialize pot on-chain:", err);
+        return res
+          .status(500)
+          .json({ error: "Failed to initialize pot on-chain" });
+      }
+    }
 
-      //db call
+    // --- 2. Try to insert into DB if on-chain was successful ---
+    try {
       const newGamePot = new GamePot({
         gameId: gameObjectId._id,
         potNumber,
         potPublicKey: potPda.toString(),
         totalLamports: 0,
-        gameplays: [], //array of gameplays
+        gameplays: [],
         status: "Active",
         createdAt: new Date(),
         closedAt: null,
       });
+
       await newGamePot.save();
 
-      res.json({
+      return res.json({
         success: true,
         message: `Pot initialized for game '${gameId}' with pot number ${potNumber}`,
         transaction: tx,
         potAddress: potPda.toString(),
         potId: newGamePot._id,
       });
-    } catch (err) {
-      if (err.message.includes("already in use")) {
-        res.status(409).json({
-          error: `Pot already exists for game '${gameId}' with pot number ${potNumber}`,
-        });
-      } else {
-        throw err;
-      }
+    } catch (dbError) {
+      console.error(
+        "Pot initialized on-chain but failed to save in DB:",
+        dbError
+      );
+      return res.status(500).json({
+        error: "Pot initialized on-chain, but failed to save in DB",
+        transaction: tx,
+      });
     }
   } catch (error) {
-    console.error("Error initializing pot:", error);
+    console.error("Unexpected error:", error);
     res.status(500).json({ error: error.message });
   }
 });
-
-// Close a pot (mark as ended)
+//close the pot when needed
 app.post("/pot/close", async (req, res) => {
+  const { gameObjectId, potPublicKey } = req.body;
+
+  if (!gameObjectId || !potPublicKey) {
+    return res
+      .status(400)
+      .json({ error: "gameObjectId and potPublicKey are required" });
+  }
+
+  const connection = program.provider.connection;
+  let txSignature;
+  let confirmed = false;
+
   try {
-    const { gameId, potNumber } = req.body;
+    // Step 1: Send the transaction
+    txSignature = await program.methods
+      .closePot()
+      .accounts({ potAccount: potPublicKey })
+      .rpc();
 
-    if (!gameId || !potNumber) {
-      return res
-        .status(400)
-        .json({ error: "gameId and potNumber are required" });
+    console.log("🟢 Transaction sent:", txSignature);
+
+    // Step 2: Confirm using web3 API manually
+    const txDetails = await connection.getParsedTransaction(txSignature, {
+      commitment: "confirmed",
+    });
+
+    if (txDetails?.meta?.err === null) {
+      console.log("🟢 Transaction confirmed via getParsedTransaction");
+      confirmed = true;
+    } else {
+      console.error("❌ Transaction failed on-chain:", txDetails?.meta?.err);
+    }
+  } catch (err) {
+    txSignature = err.signature;
+    console.error("⚠️ RPC call error:", err.name);
+
+    if (err.name === "TransactionExpiredTimeoutError" && txSignature) {
+      console.warn("⏱️ Transaction timed out. Checking status manually...");
+
+      try {
+        const txDetails = await connection.getParsedTransaction(txSignature, {
+          commitment: "confirmed",
+        });
+
+        if (txDetails?.meta?.err === null) {
+          console.log("🟢 Transaction confirmed via fallback.");
+          confirmed = true;
+        } else {
+          console.error(
+            "❌ Transaction failed on-chain:",
+            txDetails?.meta?.err
+          );
+        }
+      } catch (checkErr) {
+        console.error(
+          "🔴 Could not verify transaction status manually:",
+          checkErr.message
+        );
+      }
+    }
+  }
+
+  if (!confirmed) {
+    return res.status(500).json({
+      error: "Transaction was not confirmed",
+      txSignature: txSignature || "unknown",
+    });
+  }
+
+  // ✅ Step 3: If confirmed, update DB
+  try {
+    console.log("gameObjectId: ", gameObjectId);
+    const gamePot = await GamePot.findOne({
+      gameId: gameObjectId,
+      potPublicKey,
+    });
+
+    if (!gamePot) {
+      return res.status(404).json({ error: "Pot not found in database" });
     }
 
-    // Get the PDA
-    const potPda = getPotPDA(gameId, potNumber);
-    console.log(potPda);
+    gamePot.status = "Ended";
+    gamePot.closedAt = new Date();
+    await gamePot.save();
 
-    try {
-      // Call the close_pot instruction
-      const tx = await program.methods
-        .closePot()
-        .accounts({
-          potAccount: potPda,
-        })
-        .rpc();
-      //db call
-      const gamePot = await GamePot.findOne({
-        gameId,
-        potNumber,
-      });
-      gamePot.status = "Ended";
-      gamePot.closedAt = new Date();
-      await gamePot.save();
-      console.log(gamePot);
+    console.log("✅ DB updated:", gamePot);
 
-      res.json({
-        success: true,
-        message: `Pot closed for game '${gameId}' with pot number ${potNumber}`,
-        transaction: tx,
-        potAddress: potPda.toString(),
-      });
-    } catch (err) {
-      throw err;
-    }
-  } catch (error) {
-    console.error("Error closing pot:", error);
-    res.status(500).json({ error: error.message });
+    return res.json({
+      success: true,
+      message: `Pot closed successfully`,
+      transaction: txSignature,
+      potAddress: potPublicKey,
+    });
+  } catch (dbErr) {
+    console.error("❌ DB update failed:", dbErr.message);
+    return res.status(500).json({
+      error: "Pot closed on-chain but DB update failed",
+      txSignature,
+      details: dbErr.message,
+    });
   }
 });
 
@@ -461,8 +502,6 @@ app.post("/pot/close", async (req, res) => {
 app.post("/pot/distribute-winners", async (req, res) => {
   try {
     const { gameId, potPublicKey, winners } = req.body;
-
-    console.log(potPublicKey);
 
     if (
       !gameId ||
@@ -477,47 +516,132 @@ app.post("/pot/distribute-winners", async (req, res) => {
       });
     }
 
-    //winnerPubkeys is an array [pk1, pk2, pk3...];
-
     // Convert winner addresses to PublicKey objects
+    const potPubkey = new PublicKey(potPublicKey);
     const winnerPubkeys = winners.map((winner) => new PublicKey(winner));
 
+    console.log("Pot Account:", potPubkey.toString());
+    console.log(
+      "Winner Pubkeys:",
+      winnerPubkeys.map((p) => p.toString())
+    );
+
     try {
-      // Prepare accounts for the distribute_winners instruction
+      // Get wallet that will sign this transaction
+      const wallet = program.provider.wallet;
+      console.log("Signing with wallet:", wallet.publicKey.toString());
+
+      // Create a pot PDA key if that's what your program expects
+      // Note: The seed format should match your program's expectations
+      const [potPDA, _] = await PublicKey.findProgramAddress(
+        [Buffer.from("pot"), potPubkey.toBuffer()],
+        program.programId
+      );
+      console.log("Derived Pot PDA:", potPDA.toString());
+
+      // Create transaction manually for more control
       const remainingAccounts = winnerPubkeys.map((pubkey) => ({
         pubkey,
         isWritable: true,
         isSigner: false,
       }));
 
-      // Call the distribute_winners instruction
+      // Set better transaction options
+      const opts = {
+        commitment: "confirmed",
+        skipPreflight: true,
+        maxRetries: 5,
+      };
+
+      // Get the latest blockhash first
+      const { blockhash, lastValidBlockHeight } =
+        await program.provider.connection.getLatestBlockhash("confirmed");
+
+      // Create the transaction by a separate method builder
       const tx = await program.methods
         .distributeWinners(winnerPubkeys)
         .accounts({
-          potAccount: potPublicKey,
+          potAccount: potPubkey,
           systemProgram: anchor.web3.SystemProgram.programId,
+          // If your program expects an authority account, add it here
+          // authority: wallet.publicKey,
         })
         .remainingAccounts(remainingAccounts)
-        .rpc();
+        .transaction(); // Use transaction() instead of rpc() to get Transaction object
+
+      // Set the required transaction parameters
+      tx.feePayer = wallet.publicKey;
+      tx.recentBlockhash = blockhash;
+
+      // Sign the transaction
+      const signedTx = await wallet.signTransaction(tx);
+
+      // Send and confirm the transaction with custom confirmation
+      const signature = await program.provider.connection.sendRawTransaction(
+        signedTx.serialize(),
+        { skipPreflight: true }
+      );
+
+      console.log("Transaction sent with signature:", signature);
+
+      // Wait for confirmation with a longer timeout
+      console.log("Waiting for confirmation...");
+      const confirmation = await program.provider.connection.confirmTransaction(
+        {
+          signature,
+          blockhash,
+          lastValidBlockHeight,
+        },
+        "confirmed"
+      );
+
+      console.log("Transaction confirmed:", confirmation);
+
+      // Update the pot status in the database
+      try {
+        const gamePot = await GamePot.findOne({
+          gameId: gameId,
+          potPublicKey: potPublicKey,
+        });
+
+        if (gamePot) {
+          gamePot.winnersPaid = true;
+          gamePot.winnerAddresses = winners;
+          gamePot.paidAt = new Date();
+          await gamePot.save();
+          console.log("Database updated with winners");
+        }
+      } catch (dbError) {
+        console.warn("Winners paid on-chain but DB update failed:", dbError);
+      }
 
       res.json({
         success: true,
-        message: `Winnings distributed for game '${gameId}' with pot number ${potNumber}`,
-        transaction: tx,
-        potAddress: potPublicKey.toString(),
+        message: `Winnings distributed for game '${gameId}'`,
+        transaction: signature,
+        potAddress: potPublicKey,
         winners: winners,
       });
     } catch (err) {
-      if (err.message.includes("PotNotActive")) {
-        res.status(400).json({
+      console.error("Program-specific error:", err);
+
+      // Get detailed logs if available
+      const logs = err.logs || (err.getLogs ? err.getLogs() : null);
+      if (logs) {
+        console.error("Transaction logs:", logs);
+      }
+
+      // Handle specific error cases
+      if (err.message && err.message.includes("PotNotActive")) {
+        return res.status(400).json({
           error: "The pot must be ended before distributing winnings.",
         });
-      } else if (err.message.includes("InvalidWinnerList")) {
-        res.status(400).json({
+      } else if (err.message && err.message.includes("InvalidWinnerList")) {
+        return res.status(400).json({
           error: "Invalid winner list: must contain exactly 5 addresses.",
         });
-      } else if (err.message.includes("WinnerPubkeyMismatch")) {
-        res.status(400).json({
+      } else if (err.message && err.message.includes("WinnerPubkeyMismatch")) {
+        return res.status(400).json({
           error: "Winner public key does not match the expected order.",
         });
       } else {
@@ -526,10 +650,21 @@ app.post("/pot/distribute-winners", async (req, res) => {
     }
   } catch (error) {
     console.error("Error distributing winnings:", error);
-    res.status(500).json({ error: error.message });
+
+    // Format a user-friendly error response
+    let errorResponse = { error: "Failed to distribute winnings" };
+
+    if (error.message) {
+      errorResponse.details = error.message;
+    }
+
+    if (error.transactionLogs) {
+      errorResponse.logs = error.transactionLogs;
+    }
+
+    res.status(500).json(errorResponse);
   }
 });
-
 // Create unsigned transaction for client to sign with wallet adapter
 app.post("/pot/create-entry-fee-transaction", async (req, res) => {
   try {
@@ -809,27 +944,19 @@ app.get("/games/all", async (req, res) => {
 });
 
 // // Get all pots across all games
-// app.get("/pots", async (req, res) => {
-//   try {
-//     // Get all GamePot accounts
-//     const accounts = await program.account.gamePot.all();
+app.get("/pots/:gameId", async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    // Get all GamePot accounts
+    const gameObjectId = await Game.findOne({ gameId });
+    const pots = await GamePot.find({ gameId: gameObjectId._id });
 
-//     const allPots = accounts.map((account) => ({
-//       gameId: account.account.gameId,
-//       potNumber: account.account.potNumber.toString(),
-//       balance: account.account.totalLamports.toString(),
-//       status: Object.keys(account.account.status)[0],
-//       address: account.publicKey.toString(),
-//       balanceSol:
-//         account.account.totalLamports.toNumber() / anchor.web3.LAMPORTS_PER_SOL,
-//     }));
-
-//     res.json(allPots);
-//   } catch (error) {
-//     console.error("Error fetching all pots:", error);
-//     res.status(500).json({ error: error.message });
-//   }
-// });
+    res.json(pots);
+  } catch (error) {
+    console.error("Error fetching all pots:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 function getTop5PublicKeys(response) {
   const { leaderboard } = response;
@@ -852,12 +979,21 @@ app.listen(PORT, () => {
   console.log(`Wallet public key: ${wallet.publicKey.toString()}`);
   console.log(`Connected to Solana devnet: https://api.devnet.solana.com`);
 
-  const Flappy_bird_game_Object_Id = "6822a17cc32d4c0783a20047";
-  const Pacman_game_Object_Id = "682a469a89ba63c2685e4f6c";
+  // const Flappy_bird_game_Object_Id = "6822a17cc32d4c0783a20047";
+  // const Pacman_game_Object_Id = "682a469a89ba63c2685e4f6c";
+
+  const Flappy_bird_game_Object_Id = "68210f89681811dd521231f4";
+  const Pacman_game_Object_Id = "6821cb510d3f7c6aef6e0a17";
+
   const Fgame_Id = "flappy_bird";
   const Pgame_Id = "pacman";
+  let time = 300;
+  setInterval(() => {
+    console.log("Time: ", time);
+    time--;
+  }, 1000);
 
-  cron.schedule("*/1 * * * *", async () => {
+  cron.schedule("*/15 * * * *", async () => {
     try {
       await handleGameCron(Flappy_bird_game_Object_Id, Fgame_Id);
       await handleGameCron(Pacman_game_Object_Id, Pgame_Id);
@@ -865,6 +1001,16 @@ app.listen(PORT, () => {
       console.error("Cron job error:", err.message);
     }
   });
+
+  // const initializerFn = async () => {
+  //   try {
+  //     await handleGameCron(Flappy_bird_game_Object_Id, Fgame_Id);
+  //     // await handleGameCron(Pacman_game_Object_Id, Pgame_Id);
+  //   } catch (err) {
+  //     console.error("Cron job error:", err.message);
+  //   }
+  // };
+  // initializerFn();
 });
 
 app.post("/games/add", async (req, res) => {
@@ -889,80 +1035,127 @@ app.post("/games/add", async (req, res) => {
     res.json({ success: false, message: "Game already exists" });
   }
 });
-
 const handleGameCron = async (gameObjectId, gameId) => {
-  console.log(
-    `Running cron for game: ${gameId} at ${new Date().toISOString()}`
-  );
+  let potNumber;
+  let potId;
+  let potPublicKey;
+  let result;
+
+  // 1. Fetch latest pot
   try {
-    // Fetch latest pot
+    const fetchURL = `${process.env.SERVER_URL}/pot/latest/${gameId}`;
+    const response = await fetch(fetchURL);
+
+    const data = await response.json();
+    console.log("Latest pot: ", data);
+    const latestPot = data.pot;
+    potNumber = latestPot.potNumber;
+    potId = latestPot._id;
+    potPublicKey = latestPot.potPublicKey;
+    console.log(`Pot number: ${potNumber}`);
+  } catch (err) {
+    console.error(`Error fetching latest pot for ${gameId}:`, err.message);
+    return; // stop further execution since potNumber is essential
+  }
+
+  // 2. Fetch leaderboard
+  try {
+    const response2 = await fetch(
+      `${process.env.SERVER_URL}/leaderboard/${gameObjectId}/${potId}/`
+    );
+    const data2 = await response2.json();
+    result = getTop5PublicKeys(data2);
+    console.log("Top 5 winners:", result);
+  } catch (err) {
+    console.error(`Error fetching leaderboard for ${gameId}:`, err.message);
+    return;
+  }
+
+  // 3. Close pot if not already closed, then wait until it's truly ended
+  let potClosed = false;
+  try {
     const response = await fetch(
       `${process.env.SERVER_URL}/pot/latest/${gameId}`
     );
     const data = await response.json();
     const latestPot = data.pot;
-    const potNumber = latestPot.potNumber;
-    console.log(`Pot number: ${potNumber}`);
 
-    // Get pot document from DB
-    const potId = await GamePot.findOne({
-      gameId: gameObjectId,
-      potNumber,
-    });
-
-    // Leaderboard fetch
-    const response2 = await fetch(
-      `${process.env.SERVER_URL}/leaderboard/${gameObjectId}/${potId._id}/`
-    );
-    const data2 = await response2.json();
-    const result = getTop5PublicKeys(data2);
-    console.log("Top 5 winners:", result);
-
-    // Distribute payouts
-    const response3 = await fetch(
-      `${process.env.SERVER_URL}/pot/distribute-winners`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gameId: gameObjectId,
-          potPublicKey: potId.potPublicKey,
-          winners: result,
-        }),
-      }
-    );
-    const data3 = await response3.json();
-    console.log(data3);
-
-    // Close pot if not already closed
     if (latestPot.status !== "Ended") {
       const closeRes = await fetch(`${process.env.SERVER_URL}/pot/close`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gameId: gameObjectId,
-          potNumber,
-        }),
+        body: JSON.stringify({ gameObjectId: gameObjectId, potPublicKey }),
       });
       const closeData = await closeRes.json();
-      console.log(`Closed pot ${potNumber}:`, closeData.message);
+      console.log(`Closed pot (line 931):`, closeData);
+      potClosed = true;
     } else {
-      console.log(`Pot ${potNumber} already closed`);
+      console.log(`Pot ${potNumber} already closed (line 935)`);
+      potClosed = true;
+    }
+  } catch (err) {
+    console.error(`Error closing pot for ${gameId}:`, err.message);
+    return;
+  }
+
+  // 5.1 Wait and recheck pot status before distributing
+  if (potClosed) {
+    let retries = 3;
+    let confirmed = false;
+
+    while (retries-- > 0 && !confirmed) {
+      await new Promise((res) => setTimeout(res, 3000)); // wait 3 seconds
+      const potInfo = await GamePot.findOne({
+        gameId: gameObjectId,
+        potPublicKey,
+      });
+      if (potInfo.status === "Ended") {
+        confirmed = true;
+        console.log(`Pot ${potNumber} confirmed as ended`);
+      } else {
+        console.log(`Waiting for pot ${potNumber} to be fully closed...`);
+      }
     }
 
-    // Initialize next pot
+    // 6. Distribute winnings only if confirmed
+    if (confirmed && result && result.length > 0) {
+      try {
+        const response3 = await fetch(
+          `${process.env.SERVER_URL}/pot/distribute-winners`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              gameId: gameObjectId,
+              potPublicKey: potPublicKey,
+              winners: result,
+            }),
+          }
+        );
+        const data3 = await response3.json();
+        console.log("Payout response:", data3);
+      } catch (err) {
+        console.error(`Error distributing payouts for ${gameId}:`, err.message);
+      }
+    } else {
+      console.log(
+        `Skipping distribution: Pot not confirmed as ended or no winners`
+      );
+    }
+  }
+
+  // 6. Initialize next pot
+  try {
     const nextPotNumber = potNumber + 1;
+    console.log("nextPotNumber: ", nextPotNumber);
     const initRes = await fetch(`${process.env.SERVER_URL}/pot/initialize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        gameId: gameObjectId,
-        potNumber: nextPotNumber,
-      }),
+      body: JSON.stringify({ gameId, potNumber: nextPotNumber }),
     });
     const initData = await initRes.json();
     console.log(`Initialized pot ${nextPotNumber}:`, initData.message);
   } catch (err) {
-    console.error(`Cron job error for ${gameId}:`, err.message);
+    console.error(`Error initializing pot for ${gameId}:`, err.message);
   }
 };
