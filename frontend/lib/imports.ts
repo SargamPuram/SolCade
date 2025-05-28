@@ -3,6 +3,6 @@
 
 //TODO: change the production urls after deployment
 
-export const ROOT_URL = "https://solcade.onrender.com";
+export const ROOT_URL = "https://backend.canum.xyz/api1";
 
 // export const ROOT_URL = "http://localhost:3001";
