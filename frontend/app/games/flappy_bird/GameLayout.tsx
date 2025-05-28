@@ -50,49 +50,53 @@ export default function FlappyBirdGameLayout() {
   //Utility functions
   const fetchLeaderboard = async () => {
     setLoading(true);
-    const response = await fetch(
-      //@ts-ignore
-      `${ROOT_URL}/leaderboard/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}/user/${userId}`
-    );
-    const data = await response.json();
-    const leaderboard = data.leaderboard.map((item: any, index: number) => ({
-      rank: index + 1,
-      name: `${item.userId.publicKey.slice(
-        0,
-        4
-      )}...${item.userId.publicKey.slice(-4)}`,
-      score: item.score,
-      isYou: item.userId._id == userId,
-    }));
-    setLeaderboard(leaderboard);
-    setGameStats({
-      ...gameStats,
-      bestScore: leaderboard.find((item: any) => item.isYou)?.score,
-      players: data.uniquePlayers,
-      rank: leaderboard.find((item: any) => item.isYou)?.rank,
-      gamesPlayed: data.totalGamesPlayed,
-    });
-    setLoading(false);
+    if (gameData.flappy_bird.currentPotDetails) {
+      const response = await fetch(
+        //@ts-ignore
+        `${ROOT_URL}/leaderboard/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}/user/${userId}`
+      );
+      const data = await response.json();
+      const leaderboard = data.leaderboard.map((item: any, index: number) => ({
+        rank: index + 1,
+        name: `${item.userId.publicKey.slice(
+          0,
+          4
+        )}...${item.userId.publicKey.slice(-4)}`,
+        score: item.score,
+        isYou: item.userId._id == userId,
+      }));
+      setLeaderboard(leaderboard);
+      setGameStats({
+        ...gameStats,
+        bestScore: leaderboard.find((item: any) => item.isYou)?.score,
+        players: data.uniquePlayers,
+        rank: leaderboard.find((item: any) => item.isYou)?.rank,
+        gamesPlayed: data.totalGamesPlayed,
+      });
+      setLoading(false);
+    }
   };
 
   const checkUserPlayedGame = async () => {
     //for easy fetch, we will take gameId, potId, userId. Fetch all of them and find the most recent one.
     //Check if the user has played the game, by populating the txhash.
 
-    const response = await fetch(
-      //@ts-ignore
-      `${ROOT_URL}/user/${userId}/isPlayed/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}`
-    );
-    const data = await response.json();
-    // console.log(data);
-    //If played == false, then allow the user to play the game. else the button to pay will be unlocked.
-    // 3 cases, if there is no record (new player, it should return null), if there is a record, but not played (should return false), if there is a record and played (should return true)
-    if (data.latestGameplay === null) {
-      setIsPayEnabled(true);
-    } else {
-      setIsPayEnabled(data.latestGameplay.txhash.isPlayed);
+    if (gameData.flappy_bird.currentPotDetails) {
+      const response = await fetch(
+        //@ts-ignore
+        `${ROOT_URL}/user/${userId}/isPlayed/${gameData.flappy_bird.gameId}/${gameData.flappy_bird.currentPotDetails._id}`
+      );
+      const data = await response.json();
+      // console.log(data);
+      //If played == false, then allow the user to play the game. else the button to pay will be unlocked.
+      // 3 cases, if there is no record (new player, it should return null), if there is a record, but not played (should return false), if there is a record and played (should return true)
+      if (data.latestGameplay === null) {
+        setIsPayEnabled(true);
+      } else {
+        setIsPayEnabled(data.latestGameplay.txhash.isPlayed);
+      }
+      setTxhashStore(data.latestGameplay.txhash);
     }
-    setTxhashStore(data.latestGameplay.txhash);
   };
 
   //1. fetched pot details
@@ -267,6 +271,18 @@ export default function FlappyBirdGameLayout() {
                       {gameStats.gamesPlayed}
                     </span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-gray-400">Pot ID</p>
+                    <p className="text-xs font-bold">
+                      {
+                        (
+                          gameData.flappy_bird.currentPotDetails as {
+                            potNumber?: number;
+                          }
+                        )?.potNumber
+                      }
+                    </p>
+                  </div>
                 </div>
 
                 {isPayEnabled ? (
@@ -276,6 +292,7 @@ export default function FlappyBirdGameLayout() {
                       //@ts-ignore
                       gameData.flappy_bird.currentPotDetails.potPublicKey
                     }
+                    mode={mode}
                     checkUserPlayedGame={checkUserPlayedGame}
                   />
                 ) : (
