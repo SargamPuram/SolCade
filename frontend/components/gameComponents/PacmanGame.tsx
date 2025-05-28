@@ -8,12 +8,15 @@ const PacmanGame = () => {
   const loadScript = (src: string): Promise<void> =>
     new Promise((resolve, reject) => {
       const existing = document.querySelector(`script[src="${src}"]`);
-      if (existing) return resolve(); // Already loaded
+      if (existing) return resolve();
 
       const script = document.createElement("script");
       script.src = src;
       script.async = false;
-      script.onload = () => resolve();
+      script.onload = () => {
+        console.log("Loaded");
+        resolve();
+      };
       script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
       document.body.appendChild(script);
     });
