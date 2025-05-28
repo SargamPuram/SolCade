@@ -18,15 +18,15 @@ interface ScoreStore {
 }
 
 export const useGameStore = create<GameStore>((set) => ({
-  gameData: {
-    flappy_bird: { gameId: "6822a17cc32d4c0783a20047", currentPotDetails: {} },
-    pacman: { gameId: "682a469a89ba63c2685e4f6c", currentPotDetails: {} },
-  },
-  //test data
   // gameData: {
-  //   flappy_bird: { gameId: "68210f89681811dd521231f4", currentPotDetails: {} },
-  //   pacman: { gameId: "6821cb510d3f7c6aef6e0a17", currentPotDetails: {} },
+  //   flappy_bird: { gameId: "6822a17cc32d4c0783a20047", currentPotDetails: {} },
+  //   pacman: { gameId: "682a469a89ba63c2685e4f6c", currentPotDetails: {} },
   // },
+  //test data
+  gameData: {
+    flappy_bird: { gameId: "68210f89681811dd521231f4", currentPotDetails: {} },
+    pacman: { gameId: "6821cb510d3f7c6aef6e0a17", currentPotDetails: {} },
+  },
 
   setGameData: (gameId, potDetails) =>
     set((state) => ({
