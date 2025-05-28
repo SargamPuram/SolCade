@@ -48,7 +48,7 @@ const PacmanGame = () => {
         ) {
           window.setTimeout(() => {
             // @ts-ignore
-            window.PACMAN?.init(elAfter, "/games/pacman/");
+            window.PACMAN?.init(elAfter, "/games/Pacman/");
           }, 0);
         } else {
           elAfter!.innerHTML = `
