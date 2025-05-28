@@ -48,6 +48,7 @@ const PacmanGame = () => {
           //@ts-ignore
           window.Modernizr?.audio &&
           //@ts-ignore
+
           (window.Modernizr?.audio?.ogg || window.Modernizr?.audio?.mp3);
 
         console.log("Modernizr supported:", supported);
@@ -56,6 +57,7 @@ const PacmanGame = () => {
           console.log("Calling PACMAN.init...");
           //@ts-ignore
           window.PACMAN?.init(elAfter, "/games/Pacman/");
+
         } else {
           elAfter!.innerHTML = `Sorry, needs a decent browser`;
         }
