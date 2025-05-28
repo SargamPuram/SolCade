@@ -30,8 +30,8 @@ const PacmanGame = () => {
         const el = document.getElementById("pacman");
         if (el) el.innerHTML = ""; // Clear on fresh mount
 
-        await loadScript("/games/pacman/modernizr-1.5.min.js");
-        await loadScript("/games/pacman/pacman.js");
+        await loadScript("/games/Pacman/modernizr-1.5.min.js");
+        await loadScript("/games/Pacman/pacman.js");
 
         const elAfter = document.getElementById("pacman");
 
