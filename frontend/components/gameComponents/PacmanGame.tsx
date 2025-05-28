@@ -28,15 +28,19 @@ const PacmanGame = () => {
     const loadGame = async () => {
       try {
         const el = document.getElementById("pacman");
-        if (el) el.innerHTML = ""; // Clear on fresh mount
+        if (el) el.innerHTML = "";
+        console.log("Cleared old content");
 
         await loadScript("/games/Pacman/modernizr-1.5.min.js");
+        console.log("Loaded modernizr");
+
         await loadScript("/games/Pacman/pacman.js");
+        //@ts-ignore
+        console.log("Loaded pacman.js", window.PACMAN);
 
         const elAfter = document.getElementById("pacman");
 
-        if (
-          elAfter &&
+        const supported =
           //@ts-ignore
           window.Modernizr?.canvas &&
           //@ts-ignore
@@ -44,20 +48,19 @@ const PacmanGame = () => {
           //@ts-ignore
           window.Modernizr?.audio &&
           //@ts-ignore
-          (window.Modernizr?.audio?.ogg || window.Modernizr?.audio?.mp3)
-        ) {
-          window.setTimeout(() => {
-            // @ts-ignore
-            window.PACMAN?.init(elAfter, "/games/pacman/");
-          }, 0);
+          (window.Modernizr?.audio?.ogg || window.Modernizr?.audio?.mp3);
+
+        console.log("Modernizr supported:", supported);
+
+        if (elAfter && supported) {
+          console.log("Calling PACMAN.init...");
+          //@ts-ignore
+          window.PACMAN?.init(elAfter, "/games/Pacman/");
         } else {
-          elAfter!.innerHTML = `
-            Sorry, needs a decent browser<br />
-            <small>(Firefox 3.6+, Chrome 4+, Opera 10+, Safari 4+)</small>
-          `;
+          elAfter!.innerHTML = `Sorry, needs a decent browser`;
         }
       } catch (error) {
-        console.error(error);
+        console.error("Pacman Load Error", error);
       }
     };
 
@@ -65,9 +68,9 @@ const PacmanGame = () => {
 
     return () => {
       const el = document.getElementById("pacman");
-      if (el) el.innerHTML = ""; // Clean canvas
+      if (el) el.innerHTML = "";
       const script = document.querySelector(
-        'script[src="/games/pacman/pacman.js"]'
+        'script[src="/games/Pacman/pacman.js"]'
       );
       if (script) document.body.removeChild(script);
     };
