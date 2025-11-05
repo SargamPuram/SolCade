@@ -1,4 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { program, wallet, connection } from "../config/solana.js";
 import { getPotPDA } from "../utils/helpers.js";
@@ -12,7 +13,7 @@ class PotService {
     gameId: string,
     potNumber: number
   ): Promise<ServiceResponse> {
-    const potNumberBN = new anchor.BN(parseInt(potNumber.toString()));
+    const potNumberBN = new BN(parseInt(potNumber.toString()));
     const potPda = getPotPDA(gameObjectId, potNumber);
 
     let tx: string;
@@ -68,6 +69,9 @@ class PotService {
     let txSignature: string | undefined;
     let confirmed = false;
 
+    console.log(`Attempting to close pot: ${potPublicKey}`);
+    console.log(`Using wallet: ${wallet.publicKey.toString()}`);
+
     try {
       txSignature = await program.methods
         .closePot()
@@ -89,6 +93,8 @@ class PotService {
     } catch (err: any) {
       txSignature = err.signature;
       console.error("⚠️ RPC call error:", err.name);
+      console.error("⚠️ Error message:", err.message);
+      console.error("⚠️ Full error:", err);
 
       if (err.name === "TransactionExpiredTimeoutError" && txSignature) {
         console.warn("⏱️ Transaction timed out. Checking status manually...");
@@ -203,7 +209,15 @@ class PotService {
         "confirmed"
       );
 
-      console.log("Transaction confirmed:", confirmation);
+      console.log("Transaction confirmation:", confirmation);
+
+      // Check if transaction actually succeeded
+      if (confirmation.value.err) {
+        console.error("❌ Transaction failed on-chain:", confirmation.value.err);
+        throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
+
+      console.log("✅ Transaction succeeded on-chain");
 
       try {
         const gamePot: any = await GamePot.findOne({

@@ -37,7 +37,7 @@ const idl = JSON.parse(fs.readFileSync(idlPath, "utf-8"));
 
 // Program ID from your deployed contract
 export const programId = new PublicKey(
-  "uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky"
+  "CZaMq67eAriU6qcvPEaxojMgjFnbfZxGUwaGCfVgioET"
 );
 
 // Initialize the program

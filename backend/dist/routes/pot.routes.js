@@ -1,5 +1,6 @@
 import express from "express";
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { program, wallet, connection } from "../config/solana.js";
 import { getPotPDA } from "../utils/helpers.js";
@@ -104,7 +105,7 @@ router.post("/initialize", async (req, res) => {
         if (!gameObjectId) {
             return res.status(404).json({ error: "Game not found" });
         }
-        const potNumberBN = new anchor.BN(parseInt(potNumber.toString()));
+        const potNumberBN = new BN(parseInt(potNumber.toString()));
         const potPda = getPotPDA(gameObjectId._id.toString(), potNumber);
         let tx;
         try {
@@ -362,7 +363,7 @@ router.post("/create-entry-fee-transaction", async (req, res) => {
                 error: "gameId, potPublicKey, amount, and playerPublicKey are required",
             });
         }
-        const amountBN = new anchor.BN(parseInt(amount.toString()));
+        const amountBN = new BN(parseInt(amount.toString()));
         const player = new PublicKey(playerPublicKey);
         try {
             const transaction = await program.methods
@@ -477,7 +478,7 @@ router.post("/pay-entry-fee", async (req, res) => {
                 .json({ error: "gameId, potNumber, and amount are required" });
         }
         const potPda = getPotPDA(gameId, potNumber);
-        const amountBN = new anchor.BN(parseInt(amount.toString()));
+        const amountBN = new BN(parseInt(amount.toString()));
         try {
             const tx = await program.methods
                 .payEntryFee(amountBN)

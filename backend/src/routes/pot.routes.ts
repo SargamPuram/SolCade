@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { program, wallet, connection } from "../config/solana.js";
 import { getPotPDA } from "../utils/helpers.js";
@@ -119,7 +120,7 @@ router.post("/initialize", async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Game not found" });
     }
 
-    const potNumberBN = new anchor.BN(parseInt(potNumber.toString()));
+    const potNumberBN = new BN(parseInt(potNumber.toString()));
     const potPda = getPotPDA(gameObjectId._id.toString(), potNumber);
 
     let tx: string;
@@ -436,7 +437,7 @@ router.post("/create-entry-fee-transaction", async (req: Request, res: Response)
       });
     }
 
-    const amountBN = new anchor.BN(parseInt(amount.toString()));
+    const amountBN = new BN(parseInt(amount.toString()));
     const player = new PublicKey(playerPublicKey);
 
     try {
@@ -578,7 +579,7 @@ router.post("/pay-entry-fee", async (req: Request, res: Response) => {
     }
 
     const potPda = getPotPDA(gameId, potNumber);
-    const amountBN = new anchor.BN(parseInt(amount.toString()));
+    const amountBN = new BN(parseInt(amount.toString()));
 
     try {
       const tx = await program.methods

@@ -1,9 +1,9 @@
-import * as anchor from "@coral-xyz/anchor";
+import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { programId } from "../config/solana.js";
 // Helper function to derive PDA for a pot
 export const getPotPDA = (gameId, potNumber) => {
-    const potNumberBN = new anchor.BN(parseInt(potNumber.toString()));
+    const potNumberBN = new BN(parseInt(potNumber.toString()));
     const [potPda] = PublicKey.findProgramAddressSync([
         Buffer.from("pot"),
         Buffer.from(gameId),
