@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "programs/*"
+    "arcade_game/programs/*"
 ]
 resolver = "2"
 
