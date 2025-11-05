@@ -169,6 +169,21 @@ class PotService {
       winnerPubkeys.map((p) => p.toString())
     );
 
+    // Verify pot is in Ended status before distributing
+    try {
+      const potAccount: any = await (program.account as any).gamePot.fetch(potPubkey);
+      const statusKey = Object.keys(potAccount.status)[0];
+      console.log("Pot status:", statusKey);
+
+      // Check for both "ended" and "Ended" to be case-insensitive
+      if (statusKey.toLowerCase() !== "ended") {
+        throw new Error(`Pot must be in Ended status before distributing winners. Current status: ${statusKey}`);
+      }
+    } catch (err: any) {
+      console.error("Error fetching pot account:", err.message);
+      throw new Error(`Cannot verify pot status: ${err.message}`);
+    }
+
     try {
       const remainingAccounts = winnerPubkeys.map((pubkey) => ({
         pubkey,
@@ -195,7 +210,7 @@ class PotService {
 
       const signature = await program.provider.connection.sendRawTransaction(
         signedTx.serialize(),
-        { skipPreflight: true }
+        { skipPreflight: false, preflightCommitment: "confirmed" }
       );
 
       console.log("Transaction sent with signature:", signature);

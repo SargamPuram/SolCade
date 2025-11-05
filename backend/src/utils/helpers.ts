@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
-import { programId } from "../config/solana.js";
+import { programId, wallet } from "../config/solana.js";
 import { ILeaderboardEntry } from "../types/index.js";
 
 // Helper function to derive PDA for a pot
@@ -25,12 +25,14 @@ export const getTop5PublicKeys = (response: {
 }): string[] => {
   const { leaderboard } = response;
 
+  const defaultPubkey = process.env.DEFAULT_PUBLIC_KEY || wallet.publicKey.toString();
+
   const top5 = leaderboard
     .slice(0, 5)
-    .map((entry) => entry.userId?.publicKey || process.env.DEFAULT_PUBLIC_KEY!);
+    .map((entry) => entry.userId?.publicKey || defaultPubkey);
 
   while (top5.length < 5) {
-    top5.push(process.env.DEFAULT_PUBLIC_KEY!);
+    top5.push(defaultPubkey);
   }
 
   return top5;
