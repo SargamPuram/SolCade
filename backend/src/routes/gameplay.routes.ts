@@ -5,7 +5,7 @@ import Txhash from "../models/Txhash.js";
 const router = express.Router();
 
 // Update score for a gameplay
-router.post("/score/update", async (req: Request, res: Response) => {
+router.post("/update", async (req: Request, res: Response) => {
   try {
     const { gameId, potId, userId, txhash, score } = req.body;
 

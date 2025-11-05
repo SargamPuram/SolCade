@@ -3,7 +3,7 @@ import Gameplay from "../models/Gameplay.js";
 import Txhash from "../models/Txhash.js";
 const router = express.Router();
 // Update score for a gameplay
-router.post("/score/update", async (req, res) => {
+router.post("/update", async (req, res) => {
     try {
         const { gameId, potId, userId, txhash, score } = req.body;
         const gameplays = await Gameplay.find({

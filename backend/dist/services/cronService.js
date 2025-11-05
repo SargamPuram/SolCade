@@ -6,7 +6,7 @@ import { wallet, program } from "../config/solana.js";
 // CRON CONFIGURATION - SINGLE SOURCE OF TRUTH
 // ==========================================
 // Change this value to update both the cron schedule and time calculations
-const CRON_INTERVAL_MINUTES = 1; // Minutes between cron executions
+const CRON_INTERVAL_MINUTES = 15; // Minutes between cron executions
 // Generate cron expression from interval
 const CRON_EXPRESSION = `*/${CRON_INTERVAL_MINUTES} * * * *`;
 console.log(`📅 Cron configured to run every ${CRON_INTERVAL_MINUTES} minutes & ${CRON_EXPRESSION}`);
