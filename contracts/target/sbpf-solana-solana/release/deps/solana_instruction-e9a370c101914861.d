@@ -1,0 +1,10 @@
+/home/viscanum853/SolCade/contracts/target/sbpf-solana-solana/release/deps/libsolana_instruction-e9a370c101914861.rmeta: /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/lib.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/account_meta.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/error.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/syscalls.rs
+
+/home/viscanum853/SolCade/contracts/target/sbpf-solana-solana/release/deps/libsolana_instruction-e9a370c101914861.rlib: /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/lib.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/account_meta.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/error.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/syscalls.rs
+
+/home/viscanum853/SolCade/contracts/target/sbpf-solana-solana/release/deps/solana_instruction-e9a370c101914861.d: /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/lib.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/account_meta.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/error.rs /home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/syscalls.rs
+
+/home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/lib.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/account_meta.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/error.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-6f17d22bba15001f/solana-instruction-2.3.2/src/syscalls.rs:

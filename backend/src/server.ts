@@ -20,12 +20,11 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+app.use(cors({
+  origin: "*",
+}));
 app.use(express.json());
-app.use(
-  cors({
-    origin: "*",
-  })
-);
+app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get("/ping", (_req: Request, res: Response) => {

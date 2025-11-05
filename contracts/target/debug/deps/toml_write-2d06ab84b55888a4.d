@@ -1,0 +1,11 @@
+/home/viscanum853/SolCade/contracts/target/debug/deps/toml_write-2d06ab84b55888a4.d: /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/lib.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/key.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/string.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/value.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/write.rs
+
+/home/viscanum853/SolCade/contracts/target/debug/deps/libtoml_write-2d06ab84b55888a4.rlib: /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/lib.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/key.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/string.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/value.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/write.rs
+
+/home/viscanum853/SolCade/contracts/target/debug/deps/libtoml_write-2d06ab84b55888a4.rmeta: /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/lib.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/key.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/string.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/value.rs /home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/write.rs
+
+/home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/lib.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/key.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/string.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/value.rs:
+/home/viscanum853/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_write-0.1.1/src/write.rs:

@@ -27,7 +27,7 @@ export const provider = new anchor.AnchorProvider(connection, wallet, {
 const idlPath = path.join(__dirname, "..", "..", "arcade_game.json");
 const idl = JSON.parse(fs.readFileSync(idlPath, "utf-8"));
 // Program ID from your deployed contract
-export const programId = new PublicKey("CZaMq67eAriU6qcvPEaxojMgjFnbfZxGUwaGCfVgioET");
+export const programId = new PublicKey("AktQJxVTkzBKGSH7p74bhfYRdv1o1MrK3LEccLtpJn5W");
 // Initialize the program
 export const program = new anchor.Program(idl, provider);
 export { keypair };

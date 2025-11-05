@@ -5,8 +5,8 @@ package_manager = "yarn"
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-arcade_game = "CUPBP3FbchZnw5AnJ2oKR7FHsF7BGgcjh5SEUBQuSNnd"
+[programs.devnet]
+arcade_game = "AktQJxVTkzBKGSH7p74bhfYRdv1o1MrK3LEccLtpJn5W"
 
 [registry]
 url = "https://api.apr.dev"

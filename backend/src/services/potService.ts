@@ -80,7 +80,7 @@ class PotService {
 
       console.log("🟢 Transaction sent:", txSignature);
 
-      const txDetails = await connection.getParsedTransaction(txSignature, {
+      const txDetails = await connection.getParsedTransaction(txSignature as string, {
         commitment: "confirmed",
       });
 

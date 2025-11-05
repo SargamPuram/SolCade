@@ -37,10 +37,10 @@ const idl = JSON.parse(fs.readFileSync(idlPath, "utf-8"));
 
 // Program ID from your deployed contract
 export const programId = new PublicKey(
-  "CZaMq67eAriU6qcvPEaxojMgjFnbfZxGUwaGCfVgioET"
+  "AktQJxVTkzBKGSH7p74bhfYRdv1o1MrK3LEccLtpJn5W"
 );
 
 // Initialize the program
-export const program = new anchor.Program(idl, provider);
+export const program = new anchor.Program(idl, provider) as any;
 
 export { keypair };

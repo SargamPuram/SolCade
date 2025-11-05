@@ -5,6 +5,6 @@ declare let keypair: Keypair;
 export declare const wallet: anchor.Wallet;
 export declare const provider: anchor.AnchorProvider;
 export declare const programId: anchor.web3.PublicKey;
-export declare const program: anchor.Program<anchor.Idl>;
+export declare const program: any;
 export { keypair };
 //# sourceMappingURL=solana.d.ts.map
