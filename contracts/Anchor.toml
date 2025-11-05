@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-arcade_game = "Ffm1bXSon1CUGASN78mqiiefQdcVKBSPSNKFY3v52Pft"
+arcade_game = "CUPBP3FbchZnw5AnJ2oKR7FHsF7BGgcjh5SEUBQuSNnd"
 
 [registry]
 url = "https://api.apr.dev"

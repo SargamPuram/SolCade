@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("uqF9WXM1GkHE2nKFAPUVX1BSiWys59yzuWZW9GR9Fky");
+declare_id!("CUPBP3FbchZnw5AnJ2oKR7FHsF7BGgcjh5SEUBQuSNnd");
 
 #[program]
 pub mod arcade_game {
@@ -54,46 +54,61 @@ pub mod arcade_game {
         ctx: Context<'_, '_, '_, 'info, DistributeWinners<'info>>,
         winners: Vec<Pubkey>,
     ) -> Result<()> {
-    
+
         require!(
             ctx.accounts.pot_account.status == PotStatus::Ended,
             ErrorCode::PotNotActive
         );
-    
+
         require!(
             winners.len() == 5 && ctx.remaining_accounts.len() == 5,
             ErrorCode::InvalidWinnerList
         );
-    
-        let total = ctx.accounts.pot_account.total_lamports;
+
+        let pot_account = &ctx.accounts.pot_account;
+        let game_id = pot_account.game_id.clone();
+        let pot_number = pot_account.pot_number;
+
+        let total = pot_account.total_lamports;
         let mut distributed = 0u64;
         let percentages = [40, 25, 15, 10, 10];
-    
+
+        // Generate PDA seeds for signing
+        let pot_number_bytes = pot_number.to_le_bytes();
+        let seeds = &[
+            b"pot".as_ref(),
+            game_id.as_bytes(),
+            pot_number_bytes.as_ref(),
+            &[ctx.bumps.pot_account],
+        ];
+        let signer_seeds = &[&seeds[..]];
+
         for (i, winner_pubkey) in winners.iter().enumerate() {
             let to_account_info = ctx.remaining_accounts[i].clone();
             require_keys_eq!(*winner_pubkey, to_account_info.key(), ErrorCode::WinnerPubkeyMismatch);
-    
+
             let amount = total * percentages[i] / 100;
             distributed += amount;
-    
-            let cpi_ctx = CpiContext::new(
+
+            let cpi_ctx = CpiContext::new_with_signer(
                 ctx.accounts.system_program.to_account_info(),
                 anchor_lang::system_program::Transfer {
-                    from: ctx.accounts.pot_account.to_account_info().clone(),
+                    from: ctx.accounts.pot_account.to_account_info(),
                     to: to_account_info,
                 },
+                signer_seeds,
             );
-    
+
             anchor_lang::system_program::transfer(cpi_ctx, amount)?;
         }
-    
+
         ctx.accounts.pot_account.total_lamports = ctx
             .accounts
             .pot_account
             .total_lamports
             .checked_sub(distributed)
             .ok_or(ErrorCode::MathError)?;
-    
+
         Ok(())
     }
 
@@ -143,7 +158,11 @@ pub struct CheckPotStatus<'info> {
 
 #[derive(Accounts)]
 pub struct DistributeWinners<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"pot", pot_account.game_id.as_bytes(), &pot_account.pot_number.to_le_bytes()],
+        bump
+    )]
     pub pot_account: Account<'info, GamePot>,
 
     pub system_program: Program<'info, System>,
